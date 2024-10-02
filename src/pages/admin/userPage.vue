@@ -1,8 +1,7 @@
 <!--suppress VueUnrecognizedSlot -->
 <template>
   <div id="userPage">
-    <a-input-search class="search-input" placeholder="按名称搜索" search-button @search="handleSearch"
-                    @press-enter="handleSearch" allow-clear>
+    <a-input-search class="search-input" placeholder="按名称搜索" search-button @search="handleSearch" allow-clear>
       <template #button-icon>
         <icon-search />
       </template>
