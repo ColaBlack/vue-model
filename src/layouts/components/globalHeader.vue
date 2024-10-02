@@ -11,8 +11,8 @@
         </a-menu>
       </a-col>
       <a-col flex="64px">
-        <div v-if="loginUser.id">
-          {{ loginUser.userName ?? '无昵称' }}
+        <div v-if="userStore.loginUser.id">
+          {{ userStore.loginUser.userName ?? '无昵称' }}
         </div>
         <a-button v-else type="primary" href="/user/login">登录</a-button>
       </a-col>
@@ -21,36 +21,37 @@
 </template>
 
 <script setup lang="ts">
-import routerList from '@/router/router'
 import { type RouteRecordRaw, useRouter } from 'vue-router'
-import { computed, ref, watch } from 'vue'
-import { userStore } from '@/store/user'
+import { onMounted, ref } from 'vue'
+import { useUserStore } from '@/store/user'
 import CheckAccess from '@/access/checkAccess'
 
-const loginUser = userStore().loginUser
+const userStore = useUserStore()
 
 const router = useRouter()
 
 const selectedKeys = ref([router.currentRoute.value.path])
 
-watch(
-  () => router.currentRoute.value.path,
-  (newPath) => {
-    selectedKeys.value = [newPath]
-  }
-)
+// 路由跳转时，自动更新选中的菜单项
+router.afterEach((to) => {
+  selectedKeys.value = [to.path]
+})
 
 const handleClick = (key: string) => {
   router.push({ path: key })
 }
 
-const visibleRoutes = computed(() => {
-  return routerList.filter((item: RouteRecordRaw) => {
-    //只显示有权限的没隐藏的菜单
-    return item.meta?.hideInMenu !== true && CheckAccess(userStore().loginUser, item.meta?.access as string)
+const visibleRoutes = ref<RouteRecordRaw[]>([])
+
+onMounted(async () => {
+  const routerList = await import('../../router/routerList')
+  visibleRoutes.value = routerList.default.filter((item: RouteRecordRaw) => {
+    // 只显示有权限的没隐藏的菜单
+    return item.meta?.hideInMenu !== true && CheckAccess(userStore.loginUser, item.meta?.access as string)
   })
 })
 </script>
+
 <style scoped>
 #header .logo {
   height: 32px;

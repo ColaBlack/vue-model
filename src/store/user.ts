@@ -5,7 +5,7 @@ import { getLoginUserUsingGet } from '@/api/userController'
 import type { AxiosResponse } from 'axios'
 import roleEnums from '@/access/roleEnums'
 
-export const userStore = defineStore('USER_LOGIN_STATE', () => {
+export const useUserStore = defineStore('USER_LOGIN_STATE', () => {
   const loginUser: Ref<API.LoginUserVO> = ref({ userName: '未登录' })
 
   async function fetchLoginUser() {

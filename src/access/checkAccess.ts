@@ -1,6 +1,6 @@
 import roleEnums from '@/access/roleEnums'
 
-const checkAccess = (loginUser: any, neededRole = roleEnums.PUBLIC) => {
+const checkAccess = (loginUser: API.LoginUserVO, neededRole = roleEnums.PUBLIC) => {
   const userRole = loginUser?.userRole ?? roleEnums.PUBLIC
 
   // 如果需要的角色是普通用户而用户角色是公共用户，则返回 false（即用户没有登录）
