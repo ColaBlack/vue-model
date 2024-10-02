@@ -1,9 +1,10 @@
 import type { RouteRecordRaw } from 'vue-router'
 import WelcomePage from '@/pages/welcomePage.vue'
-import LoginPage from '@/pages/loginPage.vue'
-import RegisterPage from '@/pages/registerPage.vue'
+
 import roleEnums from '@/access/roleEnums'
-import NoAuthPage from '@/pages/noAuthPage.vue'
+import LoginPage from '@/pages/common/loginPage.vue'
+import RegisterPage from '@/pages/common/registerPage.vue'
+import NoAuthPage from '@/pages/common/noAuthPage.vue'
 
 const routerList: Array<RouteRecordRaw> = [
   {
