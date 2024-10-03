@@ -33,7 +33,6 @@
     >
       <template #userRole="{ record }">
         {{ USER_ROLE[record.userRole] || '未知用户类型' }}
-        }}
       </template>
       <template #userAvatar="{ record }">
         <a-image width="64" :src="record.userAvatar" />
