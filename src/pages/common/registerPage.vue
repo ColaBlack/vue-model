@@ -38,6 +38,7 @@ import { useUserStore } from '@/store/user'
 import { Message } from '@arco-design/web-vue'
 import router from '@/router'
 import { userRegisterUsingPost } from '@/api/userController'
+import { useRoute } from 'vue-router'
 
 const form = reactive({
   userAccount: '',
@@ -47,13 +48,16 @@ const form = reactive({
 
 const userStore = useUserStore()
 
+const route = useRoute()
+const redirect = route.query.redirect as string | undefined
+
 const handleRegister = async () => {
   const res = await userRegisterUsingPost(form)
   if (res.data.code === 200) {
     await userStore.fetchLoginUser()
-    Message.success('注册成功！即将跳转登录页面')
+    Message.success('注册成功！')
     setTimeout(() => {
-      router.push({ path: '/user/login' })
+      router.push({ path: redirect || '/user/login' })
     }, 1000)
   } else {
     Message.error('注册失败！' + res.data.message)
@@ -61,7 +65,7 @@ const handleRegister = async () => {
 }
 
 const toLogin = () => {
-  router.push({ path: '/user/login', replace: true })
+  router.push({ path: '/user/login', query: { redirect: redirect ?? '' } })
 }
 </script>
 

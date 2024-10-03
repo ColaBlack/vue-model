@@ -31,6 +31,7 @@ import { userLoginUsingPost } from '@/api/userController'
 import { useUserStore } from '@/store/user'
 import { Message } from '@arco-design/web-vue'
 import router from '@/router'
+import { useRoute } from 'vue-router'
 
 const form = reactive({
   userAccount: '',
@@ -43,20 +44,22 @@ const handleLogin = async () => {
   const res = await userLoginUsingPost(form)
   if (res.data.code === 200) {
     await userStore.fetchLoginUser()
-    Message.success('登录成功！')
+    Message.success('登录成功！即将跳转')
     await router.push({
-      path: '/',
+      path: redirect || '/',
       replace: true
     })
   } else {
     Message.error('登录失败！' + res.data.message)
   }
 }
+const route = useRoute()
+
+const redirect = route.query.redirect as string | undefined
 
 const toRegister = () => {
   router.push({
-    path: '/user/register',
-    replace: true
+    path: '/user/register', query: { redirect: redirect ?? '' }
   })
 }
 </script>
