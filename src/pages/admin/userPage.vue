@@ -32,7 +32,7 @@
       @page-change="handlePageChange"
     >
       <template #userRole="{ record }">
-        {{ record.userRole === RoleEnums.ADMIN ? '管理员' : record.userRole === roleEnums.USER ? '普通用户' : record.userRole === roleEnums.BANNER ? '封禁用户' : '未知类型'
+        {{ USER_ROLE[record.userRole] || '未知用户类型' }}
         }}
       </template>
       <template #userAvatar="{ record }">
@@ -142,8 +142,7 @@ import {
 import { Message, Modal } from '@arco-design/web-vue'
 import { dayjs } from '@arco-design/web-vue/es/_utils/date'
 import { IconDelete } from '@arco-design/web-vue/es/icon'
-import RoleEnums from '../../access/roleEnums'
-import roleEnums from '../../access/roleEnums'
+import { USER_ROLE } from '@/access/roleEnums'
 
 const form = reactive({
   border: true,
