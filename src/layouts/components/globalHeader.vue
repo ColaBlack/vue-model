@@ -22,7 +22,7 @@
 
 <script setup lang="ts">
 import { type RouteRecordRaw, useRouter } from 'vue-router'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useUserStore } from '@/store/user'
 import CheckAccess from '@/access/checkAccess'
 
@@ -41,11 +41,16 @@ const handleClick = (key: string) => {
   router.push({ path: key })
 }
 
-const visibleRoutes = ref<RouteRecordRaw[]>([])
+const routerList = ref<RouteRecordRaw[]>([])
 
 onMounted(async () => {
-  const routerList = await import('../../router/routerList')
-  visibleRoutes.value = routerList.default.filter((item: RouteRecordRaw) => {
+  const importedRouterList = await import('../../router/routerList')
+  routerList.value = importedRouterList.default
+})
+
+// 计算属性，基于 routerList 计算可见路由
+const visibleRoutes = computed(() => {
+  return routerList.value.filter((item: RouteRecordRaw) => {
     // 只显示有权限的没隐藏的菜单
     return item.meta?.hideInMenu !== true && CheckAccess(userStore.loginUser, item.meta?.access as string)
   })
