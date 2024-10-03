@@ -21,7 +21,7 @@
       :bordered="true"
       :hoverable="true"
       :stripe="true"
-      :loading="form.loading"
+      :loading="loading"
       :show-header="true"
       :pagination="{
         showTotal:true,
@@ -143,16 +143,7 @@ import { dayjs } from '@arco-design/web-vue/es/_utils/date'
 import { IconDelete } from '@arco-design/web-vue/es/icon'
 import { USER_ROLE } from '@/access/roleEnums'
 
-const form = reactive({
-  border: true,
-  borderCell: false,
-  hover: true,
-  stripe: false,
-  checkbox: true,
-  loading: false,
-  tableHeader: true,
-  noData: false
-})
+const loading = ref(false)
 
 const columns = [
   { title: '用户ID', dataIndex: 'id' },
@@ -175,6 +166,7 @@ const data = ref<API.User[]>([])
 const total = ref<number>(0)
 
 const loadData = async () => {
+  loading.value = true
   const res = await listUserByPageUsingPost(searchParams.value)
   if (res.data.code === 200) {
     data.value = res.data.data?.records || []
@@ -182,6 +174,7 @@ const loadData = async () => {
   } else {
     Message.error(res.data.message || '数据加载失败')
   }
+  loading.value = false
 }
 
 // 监听搜索条件变化，重新加载数据
