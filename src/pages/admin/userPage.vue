@@ -31,6 +31,10 @@
       }"
       @page-change="handlePageChange"
     >
+      <template #userRole="{ record }">
+        {{ record.userRole === RoleEnums.ADMIN ? '管理员' : record.userRole === roleEnums.USER ? '普通用户' : record.userRole === roleEnums.BANNER ? '封禁用户' : '未知类型'
+        }}
+      </template>
       <template #userAvatar="{ record }">
         <a-image width="64" :src="record.userAvatar" />
       </template>
@@ -138,6 +142,8 @@ import {
 import { Message, Modal } from '@arco-design/web-vue'
 import { dayjs } from '@arco-design/web-vue/es/_utils/date'
 import { IconDelete } from '@arco-design/web-vue/es/icon'
+import RoleEnums from '../../access/roleEnums'
+import roleEnums from '../../access/roleEnums'
 
 const form = reactive({
   border: true,
@@ -156,7 +162,7 @@ const columns = [
   { title: '用户昵称', dataIndex: 'userName' },
   { title: '用户头像', dataIndex: 'userAvatar', slotName: 'userAvatar' },
   { title: '用户简介', dataIndex: 'userProfile' },
-  { title: '用户角色', dataIndex: 'userRole' },
+  { title: '用户角色', dataIndex: 'userRole', slotName: 'userRole' },
   { title: '创建时间', dataIndex: 'createTime', slotName: 'createTime' },
   { title: '更新时间', dataIndex: 'updateTime', slotName: 'updateTime' },
   { title: '用户操作', dataIndex: 'action', slotName: 'action' }
