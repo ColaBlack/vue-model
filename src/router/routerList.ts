@@ -1,16 +1,16 @@
 import type { RouteRecordRaw } from 'vue-router'
-import WelcomePage from '@/pages/common/welcomePage.vue'
 import LoginPage from '@/pages/common/loginPage.vue'
 import RegisterPage from '@/pages/common/registerPage.vue'
 import roleEnums from '@/access/roleEnums'
 import NoAuthPage from '@/pages/common/noAuthPage.vue'
 import UserPage from '@/pages/admin/userPage.vue'
 import NotFoundPage from '@/pages/common/notFoundPage.vue'
+import WelcomePage from '@/pages/welcomePage.vue'
 
-const routerList: Array<RouteRecordRaw> = [
+export const routerList: Array<RouteRecordRaw> = [
   {
     path: '/',
-    name: '欢迎',
+    name: '主页',
     component: WelcomePage,
     meta: {
       access: roleEnums.PUBLIC,

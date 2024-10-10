@@ -18,12 +18,11 @@
 </template>
 
 <script setup lang="ts">
-import GlobalFooter from '@/layouts/components/globalFooter.vue'
+import GlobalFooter from '@/components/globalFooter.vue'
 </script>
 <style scoped>
 #user-layout {
   background-image: url('@/assets/loginBackground.png');
-
 }
 
 #user-layout .logo {

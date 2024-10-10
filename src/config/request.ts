@@ -1,8 +1,10 @@
 import axios from 'axios'
 
+export const BASE_URL = 'http://localhost:1221'
+
 const request = axios.create({
-  baseURL: 'http://localhost:1221',
-  timeout: 10000,
+  baseURL: BASE_URL,
+  timeout: 60000,
   withCredentials: true
 })
 

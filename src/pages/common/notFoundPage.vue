@@ -15,6 +15,4 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>

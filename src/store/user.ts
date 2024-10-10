@@ -26,5 +26,4 @@ export const useUserStore = defineStore('USER_LOGIN_STATE', () => {
     fetchLoginUser,
     setLoginUser
   }
-
 })

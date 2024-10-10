@@ -1,23 +1,47 @@
 <template>
   <div id="loginPage">
     <a-form :model="form" class="login-form" auto-label-width>
-      <a-form-item field="userAccount" label="账号" :rules="[{ required: true, message: '账号是必填项' }]"
-                   validate-trigger="blur">
-        <a-input v-model="form.userAccount" placeholder="请输入账号" @press-enter="handleRegister" />
+      <a-form-item
+        field="userAccount"
+        label="账号"
+        :rules="[{ required: true, message: '账号是必填项' }]"
+        validate-trigger="blur"
+      >
+        <a-input
+          v-model="form.userAccount"
+          placeholder="请输入账号"
+          @press-enter="handleRegister"
+        />
         <template #extra>
           <div>账号由字母、数字，长度在4-20位之间</div>
         </template>
       </a-form-item>
-      <a-form-item field="userPassword" label="密码" :rules="[{ required: true, message: '密码是必填项' }]"
-                   validate-trigger="blur">
-        <a-input-password v-model="form.userPassword" placeholder="请输入密码" @press-enter="handleRegister" />
+      <a-form-item
+        field="userPassword"
+        label="密码"
+        :rules="[{ required: true, message: '密码是必填项' }]"
+        validate-trigger="blur"
+      >
+        <a-input-password
+          v-model="form.userPassword"
+          placeholder="请输入密码"
+          @press-enter="handleRegister"
+        />
         <template #extra>
           <div>密码由字母、数字组成，长度在6-20位之间，但不能是纯数字或纯字母</div>
         </template>
       </a-form-item>
-      <a-form-item field="userPassword" label="密码" :rules="[{ required: true, message: '密码是必填项' }]"
-                   validate-trigger="blur">
-        <a-input-password v-model="form.checkPassword" placeholder="请再次输入密码" @press-enter="handleRegister" />
+      <a-form-item
+        field="userPassword"
+        label="密码"
+        :rules="[{ required: true, message: '密码是必填项' }]"
+        validate-trigger="blur"
+      >
+        <a-input-password
+          v-model="form.checkPassword"
+          placeholder="请再次输入密码"
+          @press-enter="handleRegister"
+        />
         <template #extra>
           <div>两次输入密码必须一致</div>
         </template>

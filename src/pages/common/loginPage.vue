@@ -1,16 +1,34 @@
 <template>
   <div id="loginPage">
     <a-form :model="form" class="login-form" auto-label-width>
-      <a-form-item field="userAccount" label="账号" :rules="[{ required: true, message: '账号是必填项' }]"
-                   validate-trigger="blur">
-        <a-input allow-clear v-model="form.userAccount" placeholder="请输入账号" @press-enter="handleLogin" />
+      <a-form-item
+        field="userAccount"
+        label="账号"
+        :rules="[{ required: true, message: '账号是必填项' }]"
+        validate-trigger="blur"
+      >
+        <a-input
+          allow-clear
+          v-model="form.userAccount"
+          placeholder="请输入账号"
+          @press-enter="handleLogin"
+        />
         <template #extra>
           <div>账号由字母、数字，长度在4-20位之间</div>
         </template>
       </a-form-item>
-      <a-form-item field="userPassword" label="密码" :rules="[{ required: true, message: '密码是必填项' }]"
-                   validate-trigger="blur">
-        <a-input-password allow-clear v-model="form.userPassword" placeholder="请输入密码" @press-enter="handleLogin" />
+      <a-form-item
+        field="userPassword"
+        label="密码"
+        :rules="[{ required: true, message: '密码是必填项' }]"
+        validate-trigger="blur"
+      >
+        <a-input-password
+          allow-clear
+          v-model="form.userPassword"
+          placeholder="请输入密码"
+          @press-enter="handleLogin"
+        />
         <template #extra>
           <div>密码由字母、数字组成，长度在6-20位之间，但不能是纯数字或纯字母</div>
         </template>
@@ -59,13 +77,13 @@ const redirect = route.query.redirect as string | undefined
 
 const toRegister = () => {
   router.push({
-    path: '/user/register', query: { redirect: redirect ?? '' }
+    path: '/user/register',
+    query: { redirect: redirect ?? '' }
   })
 }
 </script>
 
 <style scoped>
-
 #loginPage .login-form {
   max-width: 400px;
   margin: 100px auto auto auto;

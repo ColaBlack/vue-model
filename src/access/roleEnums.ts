@@ -10,7 +10,6 @@ const ROLE_ENUM = {
 
 export default ROLE_ENUM
 
-
 export const USER_ROLE = {
   [ROLE_ENUM.PUBLIC]: '未登录',
   [ROLE_ENUM.USER]: '普通用户',
