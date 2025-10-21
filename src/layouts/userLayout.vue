@@ -1,43 +1,75 @@
 <template>
-  <div id="user-layout">
-    <a-layout style="min-height: 100vh">
-      <a-layout-header class="header">
-        <a-space direction="vertical">
-          <img src="../assets/logo.png" class="logo" alt="logo" />
-          <p class="title">茶AI题库</p>
-        </a-space>
-      </a-layout-header>
-      <a-layout-content class="content">
-        <router-view />
-      </a-layout-content>
-      <a-layout-footer class="footer">
-        <global-footer />
-      </a-layout-footer>
-    </a-layout>
-  </div>
+  <a-layout class="user-layout">
+    <a-layout-header class="header">
+      <div class="logo">
+        <img src="@/assets/logo.png" alt="logo" />
+      </div>
+      <div class="title">Water AI</div>
+    </a-layout-header>
+    <a-layout-content class="content">
+      <router-view v-slot="{ Component }">
+        <component :is="Component" style="height: 100%;" />
+      </router-view>
+    </a-layout-content>
+    <a-layout-footer class="footer">
+      <GlobalFooter />
+    </a-layout-footer>
+  </a-layout>
 </template>
 
-<script setup lang="ts">
-import GlobalFooter from '@/components/globalFooter.vue'
+<script lang="ts" setup>
+import GlobalFooter from '@/components/globalFooter.vue';
+import {
+  Layout as ALayout,
+  LayoutHeader as ALayoutHeader,
+  LayoutContent as ALayoutContent,
+  LayoutFooter as ALayoutFooter,
+} from '@arco-design/web-vue';
 </script>
-<style scoped>
-#user-layout {
-  background-image: url('@/assets/loginBackground.png');
+
+<style lang="less" scoped>
+.user-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow: auto;
+  background-image: url('../../assets/loginBackground.png');
+  background-size: 100% 100%;
 }
 
-#user-layout .logo {
+.header {
   height: 64px;
-  margin: 0 auto;
+  line-height: 64px;
+  text-align: center;
 }
 
-#user-layout .header {
-  margin: 0 auto;
+.logo {
+  display: inline-block;
+  vertical-align: middle;
+  height: 32px;
+  width: 32px;
+  margin-right: 10px;
 }
 
-#user-layout .title {
+.logo img {
+  height: 100%;
+}
+
+.title {
+  display: inline-block;
+  vertical-align: middle;
   font-size: 24px;
   font-weight: bold;
   color: #333;
-  margin: 0;
+}
+
+.content {
+  flex: 1;
+  /* Removed padding: 20px; */
+}
+
+.footer {
+  padding: 20px;
+  text-align: center;
 }
 </style>

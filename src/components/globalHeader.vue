@@ -35,8 +35,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useUserStore } from '@/store/user'
 import CheckAccess from '@/access/checkAccess'
 import { Message } from '@arco-design/web-vue'
-import { userLogoutUsingPost } from '@/api/userController'
 import roleEnums from '@/access/roleEnums'
+import { userLogout } from '@/api/userController'
 
 const userStore = useUserStore()
 
@@ -50,7 +50,11 @@ router.afterEach((to) => {
 })
 
 const handleClick = (key: string) => {
-  router.push({ path: key })
+  if (key.startsWith('/ai/chat')) {
+    router.push({ path: '/ai/chat' })
+  } else {
+    router.push({ path: key })
+  }
 }
 
 const routerList = ref<RouteRecordRaw[]>([])
@@ -72,7 +76,7 @@ const visibleRoutes = computed(() => {
 })
 
 const logout = async () => {
-  const res = await userLogoutUsingPost()
+  const res = await userLogout()
   if (res.data.code === 200) {
     userStore.setLoginUser({ userName: '未登录', userRole: roleEnums.PUBLIC })
     Message.success('注销成功')

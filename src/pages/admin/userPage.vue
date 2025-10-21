@@ -157,10 +157,10 @@
 <script setup lang="ts">
 import { reactive, ref, watchEffect } from 'vue'
 import {
-  addUserUsingPost,
-  deleteUserUsingPost,
-  listUserByPageUsingPost,
-  updateUserUsingPost
+  addUser,
+  deleteUser,
+  listUserByPage,
+  updateUser
 } from '@/api/userController'
 import { Message, Modal } from '@arco-design/web-vue'
 import { dayjs } from '@arco-design/web-vue/es/_utils/date'
@@ -192,7 +192,7 @@ const total = ref<number>(0)
 
 const loadData = async () => {
   loading.value = true
-  const res = await listUserByPageUsingPost(searchParams.value)
+  const res = await listUserByPage(searchParams.value)
   if (res.data.code === 200) {
     data.value = res.data.data?.records || []
     total.value = res.data.data?.total || 0
@@ -222,7 +222,7 @@ const editUserClick = (record: API.User) => {
   editUserVisible.value = true
 }
 const editUserOk = async () => {
-  const res = await updateUserUsingPost(editUserForm.value)
+  const res = await updateUser(editUserForm.value)
   if (res.data.code === 200) {
     Message.success('修改用户成功')
     await loadData()
@@ -249,7 +249,7 @@ const addUserClick = () => {
   addUserVisible.value = true
 }
 const addUserOk = async () => {
-  const res = await addUserUsingPost(addUserForm)
+  const res = await addUser(addUserForm)
   if (res.data.code === 200) {
     Message.success('新增用户成功')
     await loadData()
@@ -275,7 +275,7 @@ const handleDelete = async (record: API.User) => {
     title: '确认删除',
     content: '确定要删除该用户吗？这将无法恢复。',
     onOk: async () => {
-      const res = await deleteUserUsingPost({ id: record.id })
+      const res = await deleteUser({ id: record.id })
       if (res.data.code === 200) {
         Message.success('删除成功')
         await loadData()

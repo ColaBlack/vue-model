@@ -61,7 +61,7 @@ import { reactive } from 'vue'
 import { useUserStore } from '@/store/user'
 import { Message } from '@arco-design/web-vue'
 import router from '@/router'
-import { userRegisterUsingPost } from '@/api/userController'
+import { userRegister } from '@/api/userController'
 import { useRoute } from 'vue-router'
 
 const form = reactive({
@@ -76,7 +76,7 @@ const route = useRoute()
 const redirect = route.query.redirect as string | undefined
 
 const handleRegister = async () => {
-  const res = await userRegisterUsingPost(form)
+  const res = await userRegister(form)
   if (res.data.code === 200) {
     await userStore.fetchLoginUser()
     Message.success('注册成功！')

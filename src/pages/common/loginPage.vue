@@ -45,7 +45,7 @@
 
 <script setup lang="ts">
 import { reactive } from 'vue'
-import { userLoginUsingPost } from '@/api/userController'
+import { userLogin} from '@/api/userController'
 import { useUserStore } from '@/store/user'
 import { Message } from '@arco-design/web-vue'
 import router from '@/router'
@@ -59,7 +59,7 @@ const form = reactive({
 const userStore = useUserStore()
 
 const handleLogin = async () => {
-  const res = await userLoginUsingPost(form)
+  const res = await userLogin(form)
   if (res.data.code === 200) {
     await userStore.fetchLoginUser()
     Message.success('登录成功！即将跳转')

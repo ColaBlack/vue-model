@@ -6,6 +6,7 @@ import NoAuthPage from '@/pages/common/noAuthPage.vue'
 import UserPage from '@/pages/admin/userPage.vue'
 import NotFoundPage from '@/pages/common/notFoundPage.vue'
 import WelcomePage from '@/pages/welcomePage.vue'
+import ChatPage from '@/pages/ai/chatPage.vue'
 
 export const routerList: Array<RouteRecordRaw> = [
   {
@@ -53,6 +54,16 @@ export const routerList: Array<RouteRecordRaw> = [
       hideInMenu: false
     }
   },
+  {
+    path: "/ai/chat/:chatId?",
+    name: 'AI问答',
+    component: ChatPage,
+    meta: {
+      access: roleEnums.USER,
+      hideInMenu: false
+    }
+  }
+  ,
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',

@@ -2,9 +2,9 @@
 /* eslint-disable */
 import request from '@/config/request'
 
-/** addUser POST /api/user/add */
-export async function addUserUsingPost(body: API.UserAddRequest, options?: { [key: string]: any }) {
-  return request<API.BaseResponseLong_>('/api/user/add', {
+/** 此处后端没有提供注释 POST /user/add */
+export async function addUser(body: API.UserAddRequest, options?: { [key: string]: any }) {
+  return request<API.BaseResponseLong>('/user/add', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -14,12 +14,9 @@ export async function addUserUsingPost(body: API.UserAddRequest, options?: { [ke
   })
 }
 
-/** deleteUser POST /api/user/delete */
-export async function deleteUserUsingPost(
-  body: API.DeleteRequest,
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponseBoolean_>('/api/user/delete', {
+/** 此处后端没有提供注释 POST /user/delete */
+export async function deleteUser(body: API.DeleteRequest, options?: { [key: string]: any }) {
+  return request<API.BaseResponseBoolean>('/user/delete', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -29,20 +26,17 @@ export async function deleteUserUsingPost(
   })
 }
 
-/** getLoginUser GET /api/user/get/login */
-export async function getLoginUserUsingGet(options?: { [key: string]: any }) {
-  return request<API.BaseResponseLoginUserVO_>('/api/user/get/login', {
+/** 此处后端没有提供注释 GET /user/get/login */
+export async function getLoginUser(options?: { [key: string]: any }) {
+  return request<API.BaseResponseLoginUserVO>('/user/get/login', {
     method: 'GET',
     ...(options || {})
   })
 }
 
-/** listUserByPage POST /api/user/list/page */
-export async function listUserByPageUsingPost(
-  body: API.UserQueryRequest,
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponsePageUser_>('/api/user/list/page', {
+/** 此处后端没有提供注释 POST /user/list/page */
+export async function listUserByPage(body: API.UserQueryRequest, options?: { [key: string]: any }) {
+  return request<API.BaseResponsePageUser>('/user/list/page', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -52,12 +46,9 @@ export async function listUserByPageUsingPost(
   })
 }
 
-/** userLogin POST /api/user/login */
-export async function userLoginUsingPost(
-  body: API.UserLoginRequest,
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponseLoginUserVO_>('/api/user/login', {
+/** 此处后端没有提供注释 POST /user/login */
+export async function userLogin(body: API.UserLoginRequest, options?: { [key: string]: any }) {
+  return request<API.BaseResponseLoginUserVO>('/user/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -67,20 +58,20 @@ export async function userLoginUsingPost(
   })
 }
 
-/** userLogout POST /api/user/logout */
-export async function userLogoutUsingPost(options?: { [key: string]: any }) {
-  return request<API.BaseResponseBoolean_>('/api/user/logout', {
+/** 此处后端没有提供注释 POST /user/logout */
+export async function userLogout(options?: { [key: string]: any }) {
+  return request<API.BaseResponseBoolean>('/user/logout', {
     method: 'POST',
     ...(options || {})
   })
 }
 
-/** userRegister POST /api/user/register */
-export async function userRegisterUsingPost(
+/** 此处后端没有提供注释 POST /user/register */
+export async function userRegister(
   body: API.UserRegisterRequest,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseLong_>('/api/user/register', {
+  return request<API.BaseResponseLong>('/user/register', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -90,12 +81,9 @@ export async function userRegisterUsingPost(
   })
 }
 
-/** updateUser POST /api/user/update */
-export async function updateUserUsingPost(
-  body: API.UserUpdateRequest,
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponseBoolean_>('/api/user/update', {
+/** 此处后端没有提供注释 POST /user/update */
+export async function updateUser(body: API.UserUpdateRequest, options?: { [key: string]: any }) {
+  return request<API.BaseResponseBoolean>('/user/update', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'

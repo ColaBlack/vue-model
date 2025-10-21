@@ -1,73 +1,123 @@
 declare namespace API {
-  type BaseResponseBoolean_ = {
+  type AIQuestionRequest = {
+    userPrompt?: string
+    chatId?: string
+  }
+
+  type BaseResponseBoolean = {
     code?: number
     data?: boolean
     message?: string
   }
 
-  type BaseResponseLoginUserVO_ = {
+  type BaseResponseChatRoomVO = {
+    code?: number
+    data?: ChatRoomVO
+    message?: string
+  }
+
+  type BaseResponseListChatRoomVO = {
+    code?: number
+    data?: ChatRoomVO[]
+    message?: string
+  }
+
+  type BaseResponseLoginUserVO = {
     code?: number
     data?: LoginUserVO
     message?: string
   }
 
-  type BaseResponseLong_ = {
+  type BaseResponseLong = {
     code?: number
     data?: number
     message?: string
   }
-  type BaseResponsePageUser_ = {
+
+  type BaseResponsePageUser = {
     code?: number
-    data?: PageUser_
+    data?: PageUser
     message?: string
   }
+
+  type BaseResponseString = {
+    code?: number
+    data?: string
+    message?: string
+  }
+
+  type ChatRoomAddRequest = {
+    userPrompt?: string
+    userId?: number
+  }
+
+  type ChatRoomVO = {
+    chatroom?: string
+    title?: string
+    createTime?: string
+  }
+
   type DeleteRequest = {
     id?: number
   }
+
+  type getChatRoomParams = {
+    chatroomId: string
+  }
+
   type LoginUserVO = {
-    createTime?: string
     id?: number
-    updateTime?: string
-    userAvatar?: string
     userName?: string
+    userAvatar?: string
     userProfile?: string
     userRole?: string
+    createTime?: string
+    updateTime?: string
   }
+
   type OrderItem = {
-    asc?: boolean
     column?: string
+    asc?: boolean
   }
-  type PageUser_ = {
-    countId?: string
-    current?: number
-    maxLimit?: number
-    optimizeCountSql?: boolean
-    orders?: OrderItem[]
-    pages?: number
+
+  type PageUser = {
     records?: User[]
-    searchCount?: boolean
-    size?: number
     total?: number
+    size?: number
+    current?: number
+    orders?: OrderItem[]
+    optimizeCountSql?: PageUser
+    searchCount?: PageUser
+    optimizeJoinOfCountSql?: boolean
+    maxLimit?: number
+    countId?: string
+    pages?: number
   }
+
+  type SseEmitter = {
+    timeout?: number
+  }
+
   type User = {
-    createTime?: string
     id?: number
-    isDelete?: number
-    updateTime?: string
     userAccount?: string
-    userAvatar?: string
-    userName?: string
     userPassword?: string
+    userName?: string
+    userAvatar?: string
     userProfile?: string
     userRole?: string
+    createTime?: string
+    updateTime?: string
+    isDelete?: number
   }
 
   type UserAddRequest = {
+    userName?: string
     userAccount?: string
     userAvatar?: string
-    userName?: string
     userRole?: string
   }
+
   type UserLoginRequest = {
     userAccount?: string
     userPassword?: string
@@ -75,26 +125,26 @@ declare namespace API {
 
   type UserQueryRequest = {
     current?: number
-    id?: number
     pageSize?: number
     sortField?: string
     sortOrder?: string
-    userAccount?: string
+    id?: number
     userName?: string
+    userAccount?: string
     userProfile?: string
     userRole?: string
   }
 
   type UserRegisterRequest = {
-    checkPassword?: string
     userAccount?: string
     userPassword?: string
+    checkPassword?: string
   }
 
   type UserUpdateRequest = {
     id?: number
-    userAvatar?: string
     userName?: string
+    userAvatar?: string
     userProfile?: string
     userRole?: string
   }
