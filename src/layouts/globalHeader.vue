@@ -16,7 +16,7 @@
       </a-col>
       
       <!-- 右侧用户区域 -->
-      <a-col flex="64px">
+      <a-col flex="64px" style="justify-content: center;">
         <UserDropdown
           :login-user="userStore.loginUser"
           @logout="handleLogout"
@@ -46,7 +46,11 @@ const userStore = useUserStore()
 const router = useRouter()
 
 /** 当前选中的菜单项 key 数组 */
-const selectedKeys = ref([router.currentRoute.value.path])
+const selectedKeys = ref([
+  router.currentRoute.value.path.startsWith('/ai/chat') 
+    ? '/ai/chat/:chatId?' 
+    : router.currentRoute.value.path
+])
 
 /** 路由列表 */
 const routerList = ref<RouteRecordRaw[]>([])
@@ -68,7 +72,12 @@ onMounted(async () => {
  * 确保菜单高亮状态与当前路由保持同步
  */
 router.afterEach((to) => {
-  selectedKeys.value = [to.path]
+  // 特殊处理：如果是 AI 聊天页面，统一选中 /ai/chat/:chatId? 路由
+  if (to.path.startsWith('/ai/chat')) {
+    selectedKeys.value = ['/ai/chat/:chatId?']
+  } else {
+    selectedKeys.value = [to.path]
+  }
 })
 
 // ==================== 计算属性 ====================
@@ -128,14 +137,24 @@ const handleLogout = async () => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   padding: 0 24px;
   height: 64px;
+  line-height: 64px;
   display: flex;
   align-items: center;
   position: sticky;
   top: 0;
   z-index: 100;
+  overflow: hidden;
 
   :deep(.arco-row) {
     width: 100%;
+    height: 64px;
+  }
+  
+  :deep(.arco-col) {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
   }
 }
 </style>

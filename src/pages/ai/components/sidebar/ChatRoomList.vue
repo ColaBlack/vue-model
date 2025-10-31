@@ -97,20 +97,29 @@ const handleSwitch = (chatroomId: string) => {
 
   /**
    * 自定义滚动条样式
-   * 使用细窄的滚动条，不占用太多空间
+   * 使用细窄的圆角滚动条
    */
   &::-webkit-scrollbar {
-    width: 4px;
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f5f6f7;
+    border-radius: 10px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #c9cdd4;
-    border-radius: 2px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
 
     &:hover {
-      background: #a0a4a8;
+      background: linear-gradient(135deg, #7b8ef0 0%, #8a5fb5 100%);
     }
   }
+  
+  // 兼容 Firefox
+  scrollbar-width: thin;
+  scrollbar-color: #667eea #f5f6f7;
 }
 
 /**

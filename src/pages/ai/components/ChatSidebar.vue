@@ -156,6 +156,11 @@ const handleSwitch = (chatId: string) => {
   border-right: 1px solid #e5e6eb; // 右侧边框
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); // 平滑过渡动画（折叠/展开时使用）
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05); // 轻微阴影，增加层次感
+  overflow: hidden; // 隐藏溢出内容，防止出现滚动条
+  
+  :deep(.arco-layout-sider-children) {
+    overflow: hidden; // 隐藏子元素的滚动条
+  }
 }
 
 /**

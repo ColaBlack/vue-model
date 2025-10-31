@@ -66,26 +66,53 @@ const handleMenuClick = (key: string) => {
 :deep(.arco-menu) {
   background: transparent;
   border-bottom: none;
+  height: 64px;
+  line-height: 64px;
+  overflow: hidden;
+}
+
+:deep(.arco-menu-inner) {
+  background: transparent !important;
+  height: 64px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 :deep(.arco-menu-horizontal .arco-menu-item) {
   font-weight: 500;
   color: #4e5969;
   transition: all 0.3s;
+  background: transparent !important;
+  height: 64px;
+  line-height: 64px;
+  display: flex;
+  align-items: center;
   
-  &:hover {
+  &:hover:not(.arco-menu-disabled) {
     color: #667eea;
-    background: rgba(102, 126, 234, 0.05);
+    background: rgba(102, 126, 234, 0.05) !important;
   }
   
   &.arco-menu-selected {
     color: #667eea;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%) !important;
     
     &::after {
       background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
       height: 3px;
     }
+  }
+  
+  &.arco-menu-disabled {
+    background: transparent !important;
+    cursor: default;
   }
 }
 

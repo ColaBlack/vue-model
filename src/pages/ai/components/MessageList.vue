@@ -133,20 +133,29 @@ defineExpose({
 
   /**
    * 自定义滚动条样式
-   * 使用细窄的滚动条，更美观
+   * 使用细窄的圆角滚动条，更美观
    */
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f5f6f7;
+    border-radius: 10px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #c9cdd4;
-    border-radius: 3px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
 
     &:hover {
-      background: #a0a4a8; // 悬停时颜色加深
+      background: linear-gradient(135deg, #7b8ef0 0%, #8a5fb5 100%);
     }
   }
+  
+  // 兼容 Firefox
+  scrollbar-width: thin;
+  scrollbar-color: #667eea #f5f6f7;
 }
 </style>
 
