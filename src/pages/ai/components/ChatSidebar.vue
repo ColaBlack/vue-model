@@ -1,153 +1,316 @@
+<!--
+  左侧历史记录侧边栏组件
+  功能：
+  - 显示历史聊天室列表
+  - 新建聊天
+  - 刷新列表
+  - 切换聊天室
+-->
 <template>
-  <a-layout-sider breakpoint="lg" :collapsed="collapsed" @collapse="onCollapse" :width="280">
-    <div class="logo">AI Chat</div>
-    <a-menu
-      :default-selected-keys="[currentChatRoom?.chatroom || '']"
-      :collapsed="collapsed"
-      :auto-open-selected="true"
-      @menu-item-click="handleMenuItemClick"
-    >
-      <a-menu-item key="new-chat">
+  <a-layout-sider
+    :width="280"
+    :collapsed="collapsed"
+    :collapsible="false"
+    :collapsed-width="0"
+    class="chat-sider"
+    @collapse="handleCollapseChange"
+  >
+    <!-- 折叠按钮（在展开状态显示） -->
+    <div v-if="!collapsed" class="collapse-btn" @click="handleCollapseChange(true)">
+      <icon-double-left />
+    </div>
+
+    <!-- 侧边栏头部 -->
+    <div class="sider-header">
+      <div class="sider-title">
+        <h3>聊天记录</h3>
+        <!-- 刷新按钮 -->
+        <a-button type="text" size="small" @click="handleRefresh" :loading="loading">
+          <template #icon>
+            <icon-refresh />
+          </template>
+        </a-button>
+      </div>
+      <!-- 新建聊天按钮 -->
+      <a-button type="primary" size="small" @click="handleCreate">
         <template #icon>
           <icon-plus />
         </template>
         新建聊天
-      </a-menu-item>
-      <a-sub-menu key="chat-history">
-        <template #icon>
-          <icon-message />
-        </template>
-        <template #title>聊天历史</template>
-        <a-menu-item v-for="room in chatRooms" :key="room.chatroom" @click="selectChatRoom(room)">
-          {{ room.title || room.chatroom }}
-        </a-menu-item>
-      </a-sub-menu>
-    </a-menu>
+      </a-button>
+    </div>
+
+    <a-divider :margin="0" />
+
+    <!-- 聊天室列表 -->
+    <div class="chat-list">
+      <a-spin :loading="loading" style="width: 100%">
+        <!-- 空状态 -->
+        <div v-if="chatRoomList.length === 0" class="empty-history">
+          <a-empty description="暂无历史记录" />
+        </div>
+
+        <!-- 聊天室列表项 -->
+        <div
+          v-for="room in chatRoomList"
+          :key="room.chatroom"
+          class="chat-item"
+          :class="{ active: room.chatroom === currentChatId }"
+          @click="handleSwitch(room.chatroom)"
+        >
+          <div class="chat-item-content">
+            <div class="chat-item-title">
+              {{ room.title || '未命名对话' }}
+            </div>
+            <div class="chat-item-time">
+              {{ formatTime(room.createTime) }}
+            </div>
+          </div>
+        </div>
+      </a-spin>
+    </div>
   </a-layout-sider>
 </template>
 
-<script lang="ts" setup>
-import { ref, onMounted, watch, defineProps, defineEmits, defineExpose } from 'vue'
-import {
-  LayoutSider as ALayoutSider,
-  Menu as AMenu,
-  MenuItem as AMenuItem,
-  SubMenu as ASubMenu,
-  Message as ArcoMessage
-} from '@arco-design/web-vue'
-import { IconPlus, IconMessage } from '@arco-design/web-vue/es/icon'
-import api from '@/api'
-import { useRouter } from 'vue-router'
+<script setup lang="ts">
+import { IconPlus, IconRefresh, IconDoubleLeft } from '@arco-design/web-vue/es/icon'
 
-interface ChatMessage {
-  role: 'user' | 'ai'
-  content: string
+/**
+ * 组件属性定义
+ */
+interface Props {
+  chatRoomList: API.ChatRoomVO[] // 聊天室列表
+  currentChatId: string // 当前聊天室ID
+  loading: boolean // 加载状态
+  collapsed?: boolean // 是否折叠
 }
 
-interface ChatRoom extends API.ChatRoomVO {
-  messages: ChatMessage[]
+/**
+ * 组件事件定义
+ */
+interface Emits {
+  (e: 'refresh'): void // 刷新列表
+  (e: 'create'): void // 创建新聊天
+  (e: 'switch', chatId: string): void // 切换聊天室
+  (e: 'update:collapsed', value: boolean): void // 更新折叠状态（v-model）
 }
 
-const props = defineProps({
-  currentChatRoom: {
-    type: Object as () => ChatRoom | null,
-    default: null
-  }
+// 接收属性
+const props = withDefaults(defineProps<Props>(), {
+  collapsed: false
 })
 
-const collapsed = ref(false)
-const chatRooms = ref<ChatRoom[]>([])
-const router = useRouter()
+// 定义事件
+const emit = defineEmits<Emits>()
 
-const emit = defineEmits(['selectChatRoom', 'createNewChat'])
-
-const onCollapse = (val: boolean, type: string) => {
-  console.log(val, type)
-  collapsed.value = val
+/**
+ * 处理折叠状态变化
+ * @param value 新的折叠状态
+ */
+const handleCollapseChange = (value: boolean) => {
+  emit('update:collapsed', value)
 }
 
-const fetchChatRooms = async () => {
-  try {
-    const res = await api.aiController.listChatRooms()
-    if (res.data.code === 200 && res.data.data) {
-      chatRooms.value = res.data.data.map((room) => ({
-        chatroom: room.chatroom!,
-        title: room.title,
-        createTime: room.createTime,
-        messages: []
-      }))
-      if (chatRooms.value.length > 0 && !props.currentChatRoom) {
-        emit('selectChatRoom', chatRooms.value[0])
-      }
-    } else {
-      ArcoMessage.error('获取聊天室列表失败')
-    }
-  } catch (error) {
-    console.error('Error fetching chat rooms:', error)
-    ArcoMessage.error('获取聊天室列表失败')
+/**
+ * 刷新列表
+ */
+const handleRefresh = () => {
+  emit('refresh')
+}
+
+/**
+ * 创建新聊天
+ */
+const handleCreate = () => {
+  emit('create')
+}
+
+/**
+ * 切换聊天室
+ * @param chatId 聊天室ID
+ */
+const handleSwitch = (chatId: string | undefined) => {
+  if (chatId && chatId !== props.currentChatId) {
+    emit('switch', chatId)
   }
 }
 
-const createNewChat = async () => {
-  try {
-    const res = await api.aiController.createChatRoom({ userPrompt: '新聊天' })
-    if (res.data.code === 200 && res.data.data) {
-      const newRoomId = res.data.data.chatroom // Store the ID of the newly created room
-      ArcoMessage.success('新聊天室创建成功')
-      await fetchChatRooms() // Refresh the list of chat rooms
+/**
+ * 格式化聊天时间（智能相对时间显示）
+ * @param timeStr 时间字符串
+ * @returns 格式化后的时间文本
+ */
+const formatTime = (timeStr: string | undefined): string => {
+  if (!timeStr) return ''
 
-      // Find and select the newly created room
-      const newlyCreatedRoom = chatRooms.value.find(room => room.chatroom === newRoomId)
-      if (newlyCreatedRoom) {
-        emit('selectChatRoom', newlyCreatedRoom)
-      }
-    } else {
-      ArcoMessage.error('创建聊天室失败')
-    }
-  } catch (error) {
-    console.error('Error creating chat room:', error)
-    ArcoMessage.error('创建聊天室失败')
+  const date = new Date(timeStr)
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+
+  // 小于1分钟
+  if (diff < 60 * 1000) {
+    return '刚刚'
   }
-}
 
-const selectChatRoom = (room: ChatRoom) => {
-  router.push({ path: `/ai/chat/${room.chatroom}` })
-}
-
-const handleMenuItemClick = (key: string) => {
-  if (key === 'new-chat') {
-    createNewChat()
+  // 小于1小时
+  if (diff < 60 * 60 * 1000) {
+    return `${Math.floor(diff / (60 * 1000))}分钟前`
   }
+
+  // 小于1天
+  if (diff < 24 * 60 * 60 * 1000) {
+    return `${Math.floor(diff / (60 * 60 * 1000))}小时前`
+  }
+
+  // 小于7天
+  if (diff < 7 * 24 * 60 * 60 * 1000) {
+    return `${Math.floor(diff / (24 * 60 * 60 * 1000))}天前`
+  }
+
+  // 显示具体日期
+  const year = date.getFullYear()
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const day = date.getDate().toString().padStart(2, '0')
+
+  // 同年省略年份
+  if (year === now.getFullYear()) {
+    return `${month}-${day}`
+  }
+
+  return `${year}-${month}-${day}`
 }
-
-onMounted(() => {
-  fetchChatRooms()
-})
-
-defineExpose({ fetchChatRooms, chatRooms })
 </script>
 
-<style lang="less" scoped>
-.arco-layout-sider {
-  background-color: #f7f8fa;
+<style scoped lang="less">
+// 侧边栏样式
+.chat-sider {
+  position: relative;
+  background: #f7f8fa;
   border-right: 1px solid #e5e6eb;
-  height: 100%; /* Ensure sidebar takes full height */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); // 平滑过渡动画
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
 }
 
-.logo {
-  height: 32px;
-  margin: 12px 8px;
-  background: rgba(255, 255, 255, 0.2);
-  color: #333;
+// 折叠按钮（在侧边栏展开时显示）
+.collapse-btn {
+  position: absolute;
+  top: 50%;
+  right: -12px;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 48px;
+  background: #ffffff;
+  border: 1px solid #e5e6eb;
+  border-radius: 0 8px 8px 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  font-weight: bold;
+  cursor: pointer;
+  color: #4e5969;
+  transition: all 0.2s;
+  z-index: 10;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.08);
+
+  &:hover {
+    background: #165dff;
+    color: #ffffff;
+    border-color: #165dff;
+    right: -14px;
+  }
 }
 
-.arco-menu {
-  height: calc(100% - 56px);
+// 侧边栏头部
+.sider-header {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+// 标题区域
+.sider-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+  }
+}
+
+// 聊天室列表容器
+.chat-list {
+  height: calc(100% - 100px);
   overflow-y: auto;
+  padding: 8px;
+
+  // 自定义滚动条
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #c9cdd4;
+    border-radius: 2px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #a0a4a8;
+  }
+}
+
+// 空状态
+.empty-history {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+// 聊天室列表项
+.chat-item {
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #ffffff;
+  border: 1px solid transparent;
+
+  // 悬停效果
+  &:hover {
+    background: #f2f3f5;
+    border-color: #e5e6eb;
+  }
+
+  // 活动状态（当前选中）
+  &.active {
+    background: #e8f3ff;
+    border-color: #165dff;
+  }
+}
+
+// 聊天室项内容
+.chat-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+// 聊天室标题
+.chat-item-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1d2129;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// 聊天室时间
+.chat-item-time {
+  font-size: 12px;
+  color: #86909c;
 }
 </style>
+
