@@ -92,3 +92,33 @@ export async function updateUser(body: API.UserUpdateRequest, options?: { [key: 
     ...(options || {})
   })
 }
+
+/** 更新个人信息 POST /user/update/profile */
+export async function updateUserProfile(
+  body: { userName?: string; userProfile?: string; userAvatar?: string },
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseBoolean>('/user/update/profile', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    data: body,
+    ...(options || {})
+  })
+}
+
+/** 修改密码 POST /user/update/password */
+export async function updatePassword(
+  body: { oldPassword: string; newPassword: string },
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseBoolean>('/user/update/password', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    data: body,
+    ...(options || {})
+  })
+}

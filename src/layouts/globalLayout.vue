@@ -19,9 +19,21 @@ import GlobalHeader from '@/layouts/globalHeader.vue'
 import GlobalFooter from '@/layouts/globalFooter.vue'
 </script>
 
-<style scoped>
-#global-layout .content {
-  padding: 24px;
-  background: linear-gradient(to bottom, #f8f8f8, #f5f5f5);
+<style scoped lang="less">
+#global-layout {
+  .header {
+    padding: 0;
+    height: 64px;
+    line-height: 64px;
+  }
+
+  .content {
+    padding: 0;
+    background: #f7f8fa;
+  }
+
+  .footer {
+    padding: 0;
+  }
 }
 </style>

@@ -13,7 +13,18 @@
         class="avatar"
       />
       <template #content>
-        <a-doption @click="handleLogout">注销</a-doption>
+        <a-doption @click="handleProfile">
+          <template #icon>
+            <icon-user />
+          </template>
+          个人中心
+        </a-doption>
+        <a-doption @click="handleLogout">
+          <template #icon>
+            <icon-export />
+          </template>
+          注销
+        </a-doption>
       </template>
     </a-dropdown>
     
@@ -23,6 +34,11 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
+import { IconUser, IconExport } from '@arco-design/web-vue/es/icon'
+
+const router = useRouter()
+
 /**
  * Props 定义
  */
@@ -42,6 +58,13 @@ interface Emits {
 }
 
 const emit = defineEmits<Emits>()
+
+/**
+ * 跳转到个人中心
+ */
+const handleProfile = () => {
+  router.push('/user/profile')
+}
 
 /**
  * 处理注销操作

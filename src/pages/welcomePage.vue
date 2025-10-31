@@ -216,7 +216,7 @@ const scrollToFeatures = () => {
 
 <style scoped lang="less">
 .welcome-container {
-  min-height: 100vh;
+  min-height: calc(100vh - 64px); // 减去头部高度
   background: linear-gradient(180deg, #f0f7ff 0%, #ffffff 100%);
 }
 

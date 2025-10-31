@@ -236,7 +236,7 @@ const handleDeleteUser = (record: API.User) => {
 <style scoped lang="less">
 /* 用户管理页面容器 */
 .user-page-container {
-  min-height: calc(100vh - 200px);
+  min-height: calc(100vh - 64px); // 减去头部高度
   padding: 32px;
   background: #f7f8fa;
 

@@ -7,6 +7,7 @@ import UserPage from '@/pages/admin/userPage.vue'
 import NotFoundPage from '@/pages/common/notFoundPage.vue'
 import WelcomePage from '@/pages/welcomePage.vue'
 import ChatPage from '@/pages/ai/chatPage.vue'
+import UserProfilePage from '@/pages/user/userProfilePage.vue'
 
 export const routerList: Array<RouteRecordRaw> = [
   {
@@ -62,8 +63,16 @@ export const routerList: Array<RouteRecordRaw> = [
       access: roleEnums.USER,
       hideInMenu: false
     }
-  }
-  ,
+  },
+  {
+    path: '/user/profile',
+    name: '个人中心',
+    component: UserProfilePage,
+    meta: {
+      access: roleEnums.USER,
+      hideInMenu: true
+    }
+  },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
