@@ -4,7 +4,7 @@
   包含搜索、列表展示、新增和编辑功能
 -->
 <template>
-  <div id="userPage">
+  <div id="userPage" class="user-page-container">
     <!-- 搜索和操作栏 -->
     <UserSearch
       @search="handleSearch"
@@ -233,9 +233,93 @@ const handleDeleteUser = (record: API.User) => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="less">
 /* 用户管理页面容器 */
-#userPage {
-  padding: 20px;
+.user-page-container {
+  min-height: calc(100vh - 200px);
+  padding: 32px;
+  background: #f7f8fa;
+
+  // 添加渐入动画
+  animation: fadeIn 0.4s ease-out;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  // 组件间距调整
+  :deep(.user-search) {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    margin-bottom: 24px;
+  }
+
+  :deep(.arco-table-container) {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    padding: 24px;
+
+    .arco-table {
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .arco-table-th {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+      color: #1d2129;
+      font-weight: 600;
+    }
+
+    .arco-table-tr:hover {
+      background: rgba(102, 126, 234, 0.02);
+    }
+
+    .arco-btn {
+      transition: all 0.3s;
+
+      &:hover {
+        transform: translateY(-2px);
+      }
+    }
+
+    .arco-btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+    }
+  }
+
+  :deep(.arco-pagination) {
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
+
+    .arco-pagination-item-active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: #667eea;
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 16px;
+
+    :deep(.user-search) {
+      padding: 16px;
+    }
+
+    :deep(.arco-table-container) {
+      padding: 16px;
+      overflow-x: auto;
+    }
+  }
 }
 </style>

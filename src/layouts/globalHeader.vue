@@ -120,9 +120,22 @@ const handleLogout = async () => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="less">
 /* 全局顶部导航栏容器样式 */
 #header {
-  /* 样式继承自父组件或全局样式 */
+  background: white;
+  border-bottom: 1px solid #e5e6eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  padding: 0 24px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  :deep(.arco-row) {
+    width: 100%;
+  }
 }
 </style>

@@ -62,20 +62,55 @@ const handleMenuClick = (key: string) => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="less">
+:deep(.arco-menu) {
+  background: transparent;
+  border-bottom: none;
+}
+
+:deep(.arco-menu-horizontal .arco-menu-item) {
+  font-weight: 500;
+  color: #4e5969;
+  transition: all 0.3s;
+  
+  &:hover {
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+  }
+  
+  &.arco-menu-selected {
+    color: #667eea;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    
+    &::after {
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      height: 3px;
+    }
+  }
+}
+
 .logo {
-  height: 32px;
-  margin: auto auto;
+  height: 36px;
+  margin: auto 12px auto 0;
+  transition: transform 0.3s;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
 }
 
 .title {
-  font-size: 16px;
+  font-size: 20px;
   margin: 0;
   padding: 0;
-  line-height: 16px;
-  color: #000000;
+  line-height: 20px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   text-align: center;
-  font-family: '楷体', 'Times New Roman', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 </style>
 

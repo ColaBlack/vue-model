@@ -52,7 +52,7 @@ const handleLogout = () => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="less">
 .user-dropdown {
   display: flex;
   align-items: center;
@@ -61,6 +61,37 @@ const handleLogout = () => {
 
 .avatar {
   cursor: pointer;
+  transition: all 0.3s;
+  border: 2px solid transparent;
+  
+  &:hover {
+    border-color: #667eea;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+}
+
+:deep(.arco-btn-primary) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  font-weight: 500;
+  transition: all 0.3s;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+}
+
+:deep(.arco-dropdown) {
+  :deep(.arco-dropdown-option) {
+    transition: all 0.3s;
+    
+    &:hover {
+      color: #667eea;
+      background: rgba(102, 126, 234, 0.1);
+    }
+  }
 }
 </style>
 

@@ -445,7 +445,17 @@ watch(
   height: calc(100vh - 64px); // 减去顶部导航栏高度
   display: flex;
   flex-direction: column;
-  background: #f5f6f7;
+  background: linear-gradient(135deg, #f5f7fa 0%, #f0f2f5 100%);
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 // 浮动展开按钮（侧边栏折叠时显示）
@@ -470,12 +480,17 @@ watch(
   box-shadow: 4px 0 16px rgba(102, 126, 234, 0.4);
   
   &:hover {
-    width: 52px;
-    box-shadow: 4px 0 20px rgba(102, 126, 234, 0.6);
+    width: 56px;
+    box-shadow: 4px 0 24px rgba(102, 126, 234, 0.6);
+    background: linear-gradient(135deg, #7b8ef0 0%, #8a5fb5 100%);
     
     .expand-text {
       opacity: 1;
     }
+  }
+
+  &:active {
+    transform: translateY(-50%) scale(0.95);
   }
 
   // 图标
@@ -497,13 +512,62 @@ watch(
 .chat-layout {
   height: 100%;
   background: #ffffff;
+  box-shadow: 0 0 32px rgba(0, 0, 0, 0.08);
+  border-radius: 0;
+  overflow: hidden;
 }
 
 // 内容区域样式
 .chat-content {
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  padding: 24px;
   overflow: hidden;
+  background: linear-gradient(to bottom, #ffffff 0%, #fafbfc 100%);
+
+  :deep(.arco-divider) {
+    margin: 16px 0;
+    border-color: #e5e6eb;
+  }
+
+  // 美化滚动条
+  :deep(*::-webkit-scrollbar) {
+    width: 8px;
+    height: 8px;
+  }
+
+  :deep(*::-webkit-scrollbar-track) {
+    background: #f5f6f7;
+    border-radius: 4px;
+  }
+
+  :deep(*::-webkit-scrollbar-thumb) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 4px;
+    
+    &:hover {
+      background: linear-gradient(135deg, #7b8ef0 0%, #8a5fb5 100%);
+    }
+  }
+}
+
+// 响应式优化
+@media (max-width: 768px) {
+  .chat-content {
+    padding: 16px;
+  }
+  
+  .expand-btn {
+    width: 40px;
+    height: 100px;
+    
+    &:hover {
+      width: 44px;
+    }
+    
+    .expand-text {
+      font-size: 11px;
+    }
+  }
 }
 </style>
