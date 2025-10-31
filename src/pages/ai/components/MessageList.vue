@@ -1,75 +1,68 @@
 <!--
-  消息列表组件
+  消息列表组件（重构版）
+  
   功能：
   - 显示所有聊天消息
   - 显示空状态和示例问题
-  - 显示加载状态
-  - 自动滚动
+  - 显示AI思考指示器
+  - 自动滚动到最新消息
+  
+  架构：
+  本组件作为容器，负责消息列表的管理和滚动控制
+  将视觉展示拆分为独立的子组件：
+  - MessageItem: 单条消息展示
+  - SampleQuestions: 空状态的示例问题
+  - ThinkingIndicator: AI思考动画指示器
+  
+  使用示例：
+  <MessageList
+    :messages="chatMessages"
+    :is-loading="isAiThinking"
+    @use-sample="handleSampleQuestion"
+  />
 -->
 <template>
   <div ref="messageContainer" class="message-list">
-    <!-- 空状态（无消息时显示） -->
-    <div v-if="messages.length === 0" class="empty-messages">
-      <a-empty description="暂无聊天记录，开始对话吧！">
-        <template #extra>
-          <a-space direction="vertical" size="large" style="margin-top: 20px">
-            <div style="color: #86909c; font-size: 14px">试试这些问题：</div>
-            <!-- 示例问题标签 -->
-            <a-space wrap>
-              <a-tag
-                v-for="(question, index) in sampleQuestions"
-                :key="index"
-                color="arcoblue"
-                style="cursor: pointer; padding: 8px 16px"
-                @click="handleSampleQuestion(question)"
-              >
-                {{ question }}
-              </a-tag>
-            </a-space>
-          </a-space>
-        </template>
-      </a-empty>
-    </div>
+    <!-- 空状态：无消息时显示示例问题 -->
+    <SampleQuestions 
+      v-if="messages.length === 0"
+      @select="handleSampleQuestion"
+    />
 
-    <!-- 消息列表 -->
-    <MessageItem v-for="(message, index) in messages" :key="index" :message="message" />
+    <!-- 消息列表：循环渲染每条消息 -->
+    <MessageItem 
+      v-for="(message, index) in messages" 
+      :key="index" 
+      :message="message" 
+    />
 
-    <!-- 加载状态（AI思考中） -->
-    <div v-if="isLoading" class="message-wrapper message-ai">
-      <div class="message-content">
-        <a-avatar :size="40" class="message-avatar">
-          <icon-robot />
-        </a-avatar>
-        <div class="message-bubble">
-          <div class="message-role">AI助手</div>
-          <div class="message-text">
-            <a-spin :size="16" />
-            <span :style="{ marginLeft: '8px' }">正在思考中...</span>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- AI思考指示器：AI生成回复时显示 -->
+    <ThinkingIndicator v-if="isLoading && messages.length > 0" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
-import { IconRobot } from '@arco-design/web-vue/es/icon'
 import MessageItem, { type ChatMessage } from './MessageItem.vue'
+import SampleQuestions from './message/SampleQuestions.vue'
+import ThinkingIndicator from './message/ThinkingIndicator.vue'
 
 /**
- * 组件属性定义
+ * 组件属性类型定义
  */
 interface Props {
-  messages: ChatMessage[] // 消息列表
-  isLoading: boolean // 是否正在加载（AI思考中）
+  /** 聊天消息列表 */
+  messages: ChatMessage[]
+  /** 是否正在加载（AI思考中） */
+  isLoading: boolean
 }
 
 /**
- * 组件事件定义
+ * 组件事件类型定义
  */
 interface Emits {
-  (e: 'use-sample', question: string): void // 使用示例问题
+  /** 使用示例问题事件，传递问题文本 */
+  (e: 'use-sample', question: string): void
 }
 
 // 接收属性
@@ -78,27 +71,25 @@ const props = defineProps<Props>()
 // 定义事件
 const emit = defineEmits<Emits>()
 
-// 消息容器引用
+/**
+ * 消息容器DOM引用
+ * 用于实现自动滚动功能
+ */
 const messageContainer = ref<HTMLElement | null>(null)
 
-// 示例问题列表
-const sampleQuestions = [
-  '什么是人工智能？',
-  '如何学习编程？',
-  '请介绍一下 Vue 3',
-  '今天天气怎么样？'
-]
-
 /**
- * 使用示例问题
- * @param question 问题文本
+ * 处理示例问题选择
+ * 将用户选择的示例问题发送给父组件
+ * 
+ * @param question 用户选择的问题文本
  */
 const handleSampleQuestion = (question: string) => {
   emit('use-sample', question)
 }
 
 /**
- * 滚动到底部
+ * 滚动到消息列表底部
+ * 在新消息添加时调用，确保用户看到最新内容
  */
 const scrollToBottom = () => {
   if (messageContainer.value) {
@@ -107,7 +98,9 @@ const scrollToBottom = () => {
 }
 
 /**
- * 监听消息变化，自动滚动到底部
+ * 监听消息列表变化
+ * 当有新消息时，自动滚动到底部
+ * 使用 nextTick 确保 DOM 更新完成后再滚动
  */
 watch(
   () => props.messages,
@@ -116,23 +109,32 @@ watch(
       scrollToBottom()
     })
   },
-  { deep: true }
+  { deep: true } // 深度监听数组内部变化
 )
 
-// 暴露方法给父组件
+/**
+ * 暴露方法给父组件
+ * 允许父组件手动触发滚动到底部
+ */
 defineExpose({
   scrollToBottom
 })
 </script>
 
 <style scoped lang="less">
-// 消息列表容器
+/**
+ * 消息列表容器
+ * 占据剩余空间，支持垂直滚动
+ */
 .message-list {
-  flex: 1;
-  overflow-y: auto;
+  flex: 1; // 占据父容器剩余空间
+  overflow-y: auto; // 垂直滚动
   padding: 20px 0;
 
-  // 自定义滚动条
+  /**
+   * 自定义滚动条样式
+   * 使用细窄的滚动条，更美观
+   */
   &::-webkit-scrollbar {
     width: 6px;
   }
@@ -140,66 +142,11 @@ defineExpose({
   &::-webkit-scrollbar-thumb {
     background: #c9cdd4;
     border-radius: 3px;
+
+    &:hover {
+      background: #a0a4a8; // 悬停时颜色加深
+    }
   }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background: #a0a4a8;
-  }
-}
-
-// 空状态
-.empty-messages {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  color: #999;
-}
-
-// 加载状态消息样式
-.message-wrapper {
-  margin-bottom: 24px;
-  display: flex;
-
-  &.message-ai {
-    justify-content: flex-start;
-  }
-}
-
-.message-content {
-  display: flex;
-  align-items: flex-start;
-  max-width: 70%;
-}
-
-.message-avatar {
-  margin-right: 12px;
-  flex-shrink: 0;
-  background: #00b42a;
-}
-
-.message-bubble {
-  display: flex;
-  flex-direction: column;
-  padding: 12px 16px;
-  border-radius: 8px;
-  word-break: break-word;
-  background: #f2f3f5;
-  color: #1d2129;
-}
-
-.message-role {
-  font-size: 12px;
-  opacity: 0.8;
-  margin-bottom: 4px;
-  font-weight: 600;
-}
-
-.message-text {
-  font-size: 14px;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  position: relative;
 }
 </style>
 

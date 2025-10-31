@@ -18,7 +18,7 @@
 </template>
 
 <script lang="ts" setup>
-import GlobalFooter from '@/components/globalFooter.vue';
+import GlobalFooter from '@/layouts/globalFooter.vue';
 import {
   Layout as ALayout,
   LayoutHeader as ALayoutHeader,

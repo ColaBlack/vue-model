@@ -43,22 +43,24 @@ export function createSSEConnection(
   }
 
   eventSource.onerror = (error) => {
+    console.log('SSE 事件触发，连接状态:', eventSource.readyState)
+    
     // 检查连接状态：0 = CONNECTING, 1 = OPEN, 2 = CLOSED
-    // 如果连接已关闭，可能是正常完成，不应视为错误
+    // 如果连接已关闭，这是正常完成，不是错误
     if (eventSource.readyState === EventSource.CLOSED) {
-      // 连接已关闭，可能是正常完成
+      console.log('✅ SSE 连接正常关闭，调用完成回调')
       if (onComplete) {
         onComplete()
       }
+      eventSource.close()
       return
     }
     
-    // 真正的错误情况
-    console.error('SSE 连接错误:', error)
+    // 只有在连接未正常关闭时才是真正的错误
+    console.error('❌ SSE 连接异常:', error)
     if (onError) {
       onError(error)
     }
-    // 错误时关闭连接
     eventSource.close()
   }
 

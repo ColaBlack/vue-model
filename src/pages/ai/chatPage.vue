@@ -83,6 +83,7 @@ const isLoading = ref<boolean>(false) // 是否正在加载（AI思考中）
 const chatRoomList = ref<API.ChatRoomVO[]>([]) // 历史聊天室列表
 const loadingHistory = ref<boolean>(false) // 历史记录加载状态
 const sidebarCollapsed = ref<boolean>(false) // 侧边栏折叠状态
+const isNewChatRoom = ref<boolean>(true) // 是否是新建的聊天室（用于判断是否需要刷新列表）
 const messageListRef = ref<InstanceType<typeof MessageList> | null>(null) // 消息列表组件引用
 let eventSource: EventSource | null = null // SSE连接对象
 
@@ -112,6 +113,9 @@ const initChatRoom = () => {
 
   // 加载历史消息（从localStorage）
   loadHistoryMessages()
+  
+  // 检查当前聊天室是否在历史记录列表中
+  checkIfNewChatRoom()
 }
 
 /**
@@ -120,9 +124,26 @@ const initChatRoom = () => {
  */
 const createNewChat = () => {
   const newChatId = generateChatId()
+  console.log('🆕 创建新聊天，ID:', newChatId)
   router.push(`/ai/chat/${newChatId}`)
   messages.value = []
   chatId.value = newChatId
+  isNewChatRoom.value = true // 标记为新聊天室
+  console.log('  - isNewChatRoom 设置为 true')
+}
+
+/**
+ * 检查当前聊天室是否在历史记录列表中
+ */
+const checkIfNewChatRoom = () => {
+  const exists = chatRoomList.value.some(room => room.chatroom === chatId.value)
+  isNewChatRoom.value = !exists
+  console.log('🔍 检查聊天室状态:')
+  console.log('  - chatId:', chatId.value)
+  console.log('  - 列表中的聊天室数量:', chatRoomList.value.length)
+  console.log('  - 是否存在于列表中:', exists)
+  console.log('  - isNewChatRoom:', isNewChatRoom.value)
+  console.log('  - 列表:', chatRoomList.value.map(r => r.chatroom))
 }
 
 /**
@@ -147,6 +168,7 @@ const switchChatRoom = async (roomId: string) => {
   // 更新路由和chatId
   router.push(`/ai/chat/${roomId}`)
   chatId.value = roomId
+  isNewChatRoom.value = false // 切换到历史聊天室，不是新的
 
   // 加载新会话的历史消息
   messages.value = []
@@ -218,13 +240,16 @@ const sendMessage = async () => {
 
   // 如果是第一条消息，先在后端创建聊天室记录
   const isFirstMessage = messages.value.length === 0
+  console.log('📝 发送消息 - isFirstMessage:', isFirstMessage, 'isNewChatRoom:', isNewChatRoom.value)
+  
   if (isFirstMessage) {
     try {
+      console.log('🔨 正在创建聊天室...')
       const response = await createChatRoom({
         userPrompt: prompt
       })
 
-      console.log('创建聊天室响应:', response)
+      console.log('✅ 创建聊天室响应:', response)
 
       // 检查HTTP状态码200表示成功
       if (response.status === 200) {
@@ -232,22 +257,30 @@ const sendMessage = async () => {
         const backendChatId = data?.chatroom || data?.chatroomId || data?.id
 
         if (backendChatId) {
-          console.log('聊天室创建成功，ID:', backendChatId)
+          console.log('✅ 聊天室创建成功，ID:', backendChatId)
 
           // 更新为后端返回的chatId
           if (backendChatId !== chatId.value) {
+            console.log('🔄 更新 chatId 从', chatId.value, '到', backendChatId)
             chatId.value = backendChatId
             router.replace(`/ai/chat/${backendChatId}`)
           }
+          
+          // 立即刷新聊天室列表
+          console.log('🔄 聊天室创建成功，立即刷新历史记录列表')
+          setTimeout(() => {
+            loadChatRoomList()
+          }, 500) // 延迟500ms确保后端已经保存
+          
         } else {
-          console.warn('后端未返回聊天室ID，使用前端生成的ID')
+          console.warn('⚠️ 后端未返回聊天室ID，使用前端生成的ID')
         }
       } else {
-        console.error('创建聊天室失败，状态码:', response.status)
+        console.error('❌ 创建聊天室失败，状态码:', response.status)
         Message.warning('聊天室创建失败，但可以继续对话')
       }
     } catch (error: any) {
-      console.error('创建聊天室失败:', error)
+      console.error('❌ 创建聊天室失败:', error)
       Message.warning('聊天室创建失败，但可以继续对话')
     }
   }
@@ -286,29 +319,33 @@ const sendMessage = async () => {
         isLoading.value = false
         messages.value[aiMessageIndex].content += data
       },
-      // onError: 发生错误
+      // onError: 发生错误（只有真正的错误才会触发）
       (error: Event) => {
-        console.error('SSE连接错误:', error)
+        console.error('❌ SSE连接错误:', error)
         isConnecting.value = false
         isLoading.value = false
         messages.value[aiMessageIndex].isStreaming = false
+        
+        // 只有在没有接收到任何内容时才显示错误信息
         if (messages.value[aiMessageIndex].content === '') {
           messages.value[aiMessageIndex].content = '抱歉，连接出现问题，请稍后重试。'
+          Message.error('连接失败，请稍后重试')
+        } else {
+          // 如果已经有内容了，说明部分成功，不显示错误
+          console.log('⚠️ 连接中断，但已接收到部分内容')
         }
-        Message.error('连接失败，请稍后重试')
+        
         saveHistoryMessages()
       },
       // onComplete: 完成
       () => {
+        console.log('✅ SSE 连接完成')
         isConnecting.value = false
         isLoading.value = false
         messages.value[aiMessageIndex].isStreaming = false
         saveHistoryMessages()
-
-        // 如果是首次对话，刷新历史记录列表
-        if (messages.value.length === 2) {
-          loadChatRoomList()
-        }
+        
+        console.log('当前 isNewChatRoom 状态:', isNewChatRoom.value)
       }
     )
   } catch (error) {
@@ -344,6 +381,9 @@ const loadChatRoomList = async () => {
         if (chatRoomList.value.length === 0) {
           console.log('提示：暂无历史聊天记录，发送第一条消息后会自动创建')
         }
+        
+        // 重新检查当前聊天室是否为新建
+        checkIfNewChatRoom()
       } else {
         console.warn('返回的数据格式不是数组:', data)
         chatRoomList.value = []

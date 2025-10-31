@@ -1,161 +1,52 @@
-<!--suppress VueUnrecognizedSlot -->
+<!--
+  用户管理页面
+  提供用户的增删改查功能
+  包含搜索、列表展示、新增和编辑功能
+-->
 <template>
   <div id="userPage">
-    <a-input-search
-      class="search-input"
-      placeholder="按名称搜索"
-      search-button
+    <!-- 搜索和操作栏 -->
+    <UserSearch
       @search="handleSearch"
-      allow-clear
-    >
-      <template #button-icon>
-        <icon-search />
-      </template>
-      <template #button-default> 搜索 </template>
-    </a-input-search>
-    <a-button type="primary" @click="addUserClick" style="margin-bottom: 10px; margin-left: 20px">
-      <template #icon>
-        <icon-plus />
-      </template>
-      <template #default>新增用户</template>
-    </a-button>
-    <a-table
-      :columns="columns"
+      @add-user="handleAddUserClick"
+    />
+    
+    <!-- 用户列表表格 -->
+    <UserTable
       :data="data"
-      :bordered="true"
-      :hoverable="true"
-      :stripe="true"
       :loading="loading"
-      :show-header="true"
       :pagination="{
-        showTotal: true,
-        pageSize: searchParams.pageSize,
         current: searchParams.current,
+        pageSize: searchParams.pageSize,
         total: total
       }"
+      :user-role-map="USER_ROLE"
       @page-change="handlePageChange"
-    >
-      <template #userRole="{ record }">
-        {{ USER_ROLE[record.userRole] || '未知用户类型' }}
-      </template>
-      <template #userAvatar="{ record }">
-        <a-image width="64" :src="record.userAvatar" />
-      </template>
-      <template #createTime="{ record }">
-        {{ dayjs(record.createTime).format('YYYY-MM-DD HH:mm:ss') }}
-      </template>
-      <template #updateTime="{ record }">
-        {{ dayjs(record.updateTime).format('YYYY-MM-DD HH:mm:ss') }}
-      </template>
-      <template #action="{ record }">
-        <a-button type="outline" @click="editUserClick(record)">编辑</a-button>
-        <a-popconfirm content="你确定要删除该用户吗？" @ok="handleDelete(record)">
-          <a-button status="danger" type="primary" style="margin-left: 10px">
-            <template #icon>
-              <icon-delete />
-            </template>
-            <template #default>Delete</template>
-          </a-button>
-        </a-popconfirm>
-      </template>
-    </a-table>
-    <div id="addUser">
-      <a-drawer
-        :width="500"
-        :visible="addUserVisible"
-        @ok="addUserOk"
-        @cancel="addUserCancel"
-        unmountOnClose
-      >
-        <template #title> 新增用户 </template>
-        <div class="add-user-form">
-          <a-form :model="addUserForm" label-width="80">
-            <a-form-item
-              label="用户账号"
-              :rules="[{ required: true, message: '用户账号是必填项' }]"
-            >
-              <a-input v-model="addUserForm.userAccount" />
-              <template #extra>
-                <div>账号由字母、数字，长度在4-20位之间，必须唯一</div>
-              </template>
-            </a-form-item>
-            <a-form-item label="用户昵称">
-              <a-input v-model="addUserForm.userName" />
-              <template #extra>
-                <div>昵称可为空，若为空则显示无昵称，可不唯一</div>
-              </template>
-            </a-form-item>
-            <a-form-item label="用户头像">
-              <a-input v-model="addUserForm.userAvatar" />
-              <template #extra>
-                <div>可为空，若为空则使用默认头像</div>
-              </template>
-            </a-form-item>
-            <a-form-item
-              label="用户角色"
-              :rules="[{ required: true, message: '用户角色是必填项' }]"
-            >
-              <a-select v-model="addUserForm.userRole" placeholder="请选择用户角色" allow-clear>
-                <a-option
-                  v-for="(value, key) of USER_STATUS"
-                  :value="key"
-                  :key="key"
-                  :label="value"
-                ></a-option>
-              </a-select>
-            </a-form-item>
-          </a-form>
-        </div>
-      </a-drawer>
-    </div>
-    <div id="editUser">
-      <a-drawer
-        :width="500"
-        :visible="editUserVisible"
-        @ok="editUserOk"
-        @cancel="editUserCancel"
-        unmountOnClose
-      >
-        <template #title> 编辑用户 </template>
-        <div class="add-user-form">
-          <a-form :model="editUserForm" label-width="80">
-            <a-form-item label="用户昵称">
-              <a-input v-model="editUserForm.userName" />
-              <template #extra>
-                <div>昵称可为空，若为空则显示无昵称，可不唯一</div>
-              </template>
-            </a-form-item>
-            <a-form-item label="用户简介">
-              <a-input v-model="editUserForm.userProfile" />
-              <template #extra>
-                <div>用户简介可为空</div>
-              </template>
-            </a-form-item>
-            <a-form-item label="用户头像">
-              <a-input v-model="editUserForm.userAvatar" />
-              <template #extra>
-                <div>可为空，若为空则使用默认头像</div>
-              </template>
-            </a-form-item>
-            <a-form-item label="用户角色">
-              <a-select v-model="editUserForm.userRole" placeholder="请选择用户角色" allow-clear>
-                <a-option
-                  v-for="(value, key) of USER_STATUS"
-                  :value="key"
-                  :key="key"
-                  :label="value"
-                ></a-option>
-              </a-select>
-            </a-form-item>
-          </a-form>
-        </div>
-      </a-drawer>
-    </div>
+      @edit="handleEditUserClick"
+      @delete="handleDeleteUser"
+    />
+    
+    <!-- 新增用户抽屉 -->
+    <UserDrawer
+      v-model:visible="addUserVisible"
+      mode="add"
+      :user-status-map="USER_STATUS"
+      @submit="handleAddUserSubmit"
+    />
+    
+    <!-- 编辑用户抽屉 -->
+    <UserDrawer
+      v-model:visible="editUserVisible"
+      mode="edit"
+      :initial-data="editUserData"
+      :user-status-map="USER_STATUS"
+      @submit="handleEditUserSubmit"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watchEffect } from 'vue'
+import { ref, watchEffect } from 'vue'
 import {
   addUser,
   deleteUser,
@@ -163,124 +54,176 @@ import {
   updateUser
 } from '@/api/userController'
 import { Message, Modal } from '@arco-design/web-vue'
-import { dayjs } from '@arco-design/web-vue/es/_utils/date'
-import { IconDelete } from '@arco-design/web-vue/es/icon'
 import { USER_ROLE } from '@/access/roleEnums'
 import { USER_STATUS } from '@/enums/userEnums'
+import UserSearch from './components/UserSearch.vue'
+import UserTable from './components/UserTable.vue'
+import UserDrawer from './components/UserDrawer.vue'
 
+// ==================== 数据状态 ====================
+
+/** 加载状态 */
 const loading = ref(false)
 
-const columns = [
-  { title: '用户ID', dataIndex: 'id' },
-  { title: '用户账号', dataIndex: 'userAccount' },
-  { title: '用户昵称', dataIndex: 'userName' },
-  { title: '用户头像', dataIndex: 'userAvatar', slotName: 'userAvatar' },
-  { title: '用户简介', dataIndex: 'userProfile' },
-  { title: '用户角色', dataIndex: 'userRole', slotName: 'userRole' },
-  { title: '创建时间', dataIndex: 'createTime', slotName: 'createTime' },
-  { title: '更新时间', dataIndex: 'updateTime', slotName: 'updateTime' },
-  { title: '用户操作', dataIndex: 'action', slotName: 'action' }
-]
-
+/** 搜索参数 */
 const searchParams = ref<API.UserQueryRequest>({
   current: 1,
   pageSize: 10
 })
 
+/** 用户列表数据 */
 const data = ref<API.User[]>([])
+
+/** 数据总数 */
 const total = ref<number>(0)
 
+// ==================== 新增用户相关 ====================
+
+/** 新增用户抽屉可见状态 */
+const addUserVisible = ref(false)
+
+// ==================== 编辑用户相关 ====================
+
+/** 编辑用户抽屉可见状态 */
+const editUserVisible = ref(false)
+
+/** 当前编辑的用户数据 */
+const editUserData = ref<Partial<API.User>>({})
+
+// ==================== 数据加载 ====================
+
+/**
+ * 加载用户列表数据
+ * 根据搜索参数从后端获取用户数据
+ */
 const loadData = async () => {
   loading.value = true
-  const res = await listUserByPage(searchParams.value)
-  if (res.data.code === 200) {
-    data.value = res.data.data?.records || []
-    total.value = res.data.data?.total || 0
-  } else {
-    Message.error(res.data.message || '数据加载失败')
+  try {
+    const res = await listUserByPage(searchParams.value)
+    if (res.data.code === 200) {
+      data.value = res.data.data?.records || []
+      total.value = res.data.data?.total || 0
+    } else {
+      Message.error(res.data.message || '数据加载失败')
+    }
+  } catch (error) {
+    Message.error('数据加载失败')
+  } finally {
+    loading.value = false
   }
-  loading.value = false
 }
 
-// 监听搜索条件变化，重新加载数据
+/**
+ * 监听搜索条件变化，自动重新加载数据
+ */
 watchEffect(() => {
   loadData()
 })
 
+// ==================== 事件处理 ====================
+
+/**
+ * 处理搜索
+ * @param value - 搜索关键词（用户名）
+ */
+const handleSearch = (value: string) => {
+  searchParams.value = { 
+    ...searchParams.value, 
+    userName: value,
+    current: 1 // 搜索时重置到第一页
+  }
+}
+
+/**
+ * 处理页码变化
+ * @param page - 新的页码
+ */
 const handlePageChange = (page: number) => {
   searchParams.value = { ...searchParams.value, current: page }
 }
 
-const editUserVisible = ref(false)
-
-const editUserClick = (record: API.User) => {
-  editUserForm.value.id = record.id
-  editUserForm.value.userAvatar = record.userAvatar
-  editUserForm.value.userName = record.userName
-  editUserForm.value.userProfile = record.userProfile
-  editUserForm.value.userRole = record.userRole
-  editUserVisible.value = true
-}
-const editUserOk = async () => {
-  const res = await updateUser(editUserForm.value)
-  if (res.data.code === 200) {
-    Message.success('修改用户成功')
-    await loadData()
-    editUserVisible.value = false
-  } else {
-    Message.error('修改用户失败:' + res.data.message)
-  }
-}
-const editUserCancel = () => {
-  editUserVisible.value = false
-}
-
-let editUserForm = ref<API.UserUpdateRequest>({
-  id: -1,
-  userAvatar: '',
-  userName: '',
-  userProfile: '',
-  userRole: ''
-})
-
-const addUserVisible = ref(false)
-
-const addUserClick = () => {
+/**
+ * 处理点击新增用户按钮
+ * 打开新增用户抽屉
+ */
+const handleAddUserClick = () => {
   addUserVisible.value = true
 }
-const addUserOk = async () => {
-  const res = await addUser(addUserForm)
-  if (res.data.code === 200) {
-    Message.success('新增用户成功')
-    await loadData()
-    addUserVisible.value = false
-  } else {
-    Message.error('新增用户失败:' + res.data.message)
+
+/**
+ * 处理新增用户提交
+ * @param formData - 新增用户表单数据
+ */
+const handleAddUserSubmit = async (formData: API.UserAddRequest) => {
+  try {
+    const res = await addUser(formData)
+    if (res.data.code === 200) {
+      Message.success('新增用户成功')
+      await loadData()
+      addUserVisible.value = false
+    } else {
+      Message.error('新增用户失败: ' + res.data.message)
+    }
+  } catch (error) {
+    Message.error('新增用户失败')
   }
 }
-const addUserCancel = () => {
-  addUserVisible.value = false
+
+/**
+ * 处理点击编辑用户按钮
+ * 打开编辑用户抽屉并填充数据
+ * @param record - 用户数据
+ */
+const handleEditUserClick = (record: API.User) => {
+  editUserData.value = {
+    id: record.id,
+    userAvatar: record.userAvatar,
+    userName: record.userName,
+    userProfile: record.userProfile,
+    userRole: record.userRole
+  }
+  editUserVisible.value = true
 }
 
-const addUserForm: API.UserAddRequest = reactive({
-  bankName: '',
-  userName: '',
-  userAvatar: '',
-  userRole: ''
-})
+/**
+ * 处理编辑用户提交
+ * @param formData - 编辑用户表单数据
+ */
+const handleEditUserSubmit = async (formData: API.UserUpdateRequest) => {
+  try {
+    const res = await updateUser(formData)
+    if (res.data.code === 200) {
+      Message.success('修改用户成功')
+      await loadData()
+      editUserVisible.value = false
+    } else {
+      Message.error('修改用户失败: ' + res.data.message)
+    }
+  } catch (error) {
+    Message.error('修改用户失败')
+  }
+}
 
-const handleDelete = async (record: API.User) => {
-  // 在删除之前显示确认框
+/**
+ * 处理删除用户
+ * 显示确认对话框，确认后调用删除接口
+ * @param record - 用户数据
+ */
+const handleDeleteUser = (record: API.User) => {
   Modal.confirm({
     title: '确认删除',
     content: '确定要删除该用户吗？这将无法恢复。',
     onOk: async () => {
-      const res = await deleteUser({ id: record.id })
-      if (res.data.code === 200) {
-        Message.success('删除成功')
-        await loadData()
-      } else {
-        Message.error(res.data.message || '删除失败')
+      try {
+        const res = await deleteUser({ id: record.id })
+        if (res.data.code === 200) {
+          Message.success('删除成功')
+          await loadData()
+        } else {
+          Message.error(res.data.message || '删除失败')
+        }
+      } catch (error) {
+        Message.error('删除失败')
       }
     },
     onCancel: () => {
@@ -288,15 +231,11 @@ const handleDelete = async (record: API.User) => {
     }
   })
 }
-
-const handleSearch = (value: string) => {
-  searchParams.value = { ...searchParams.value, userName: value }
-}
 </script>
 
 <style scoped>
-#userPage .search-input {
-  width: 320px;
-  margin-bottom: 10px;
+/* 用户管理页面容器 */
+#userPage {
+  padding: 20px;
 }
 </style>

@@ -15,8 +15,8 @@
 </template>
 
 <script setup lang="ts">
-import GlobalHeader from '@/components/globalHeader.vue'
-import GlobalFooter from '@/components/globalFooter.vue'
+import GlobalHeader from '@/layouts/globalHeader.vue'
+import GlobalFooter from '@/layouts/globalFooter.vue'
 </script>
 
 <style scoped>
