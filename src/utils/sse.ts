@@ -1,84 +1,141 @@
 import { BASE_URL } from '@/config/request'
 
 /**
- * SSE 流式请求工具
- * @param userPrompt 用户提问
- * @param chatId 聊天室ID
+ * SSE 流式请求工具（支持POST请求）
+ * @param endpoint API端点路径（如 '/ai/chat' 或 '/ai/vision-chat'）
+ * @param requestData 请求数据对象
  * @param onMessage 接收消息回调
  * @param onError 错误回调
  * @param onComplete 完成回调
- * @returns EventSource 实例，可用于关闭连接
+ * @returns 包含abort方法的对象，可用于取消请求
  */
 export function createSSEConnection(
-  userPrompt: string,
-  chatId: string,
+  endpoint: string,
+  requestData: any,
   onMessage: (data: string) => void,
   onError?: (error: Event) => void,
   onComplete?: () => void
 ): EventSource {
-  // 构建 GET 请求 URL，包含查询参数
-  const params = new URLSearchParams({
-    userPrompt,
-    chatId
-  })
-  
-  const url = `${BASE_URL}/ai/chat?${params.toString()}`
-  
-  // EventSource 不支持 withCredentials 选项，但同源请求会自动发送 cookie
-  // 如果是跨域，需要后端配置 CORS 允许 credentials
-  const eventSource = new EventSource(url)
+  const url = `${BASE_URL}${endpoint}`
+  console.log('🔗 创建SSE连接:', url)
+  console.log('📦 请求数据:', requestData)
 
-  eventSource.onmessage = (event) => {
+  // 创建一个AbortController用于取消请求
+  const abortController = new AbortController()
+  
+  // 使用fetch进行POST请求并处理流式响应
+  const fetchSSE = async () => {
     try {
-      const data = event.data
-      if (data) {
-        onMessage(data)
+      // 获取token（如果有）
+      const token = localStorage.getItem('token')
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json'
       }
-    } catch (error) {
-      console.error('解析 SSE 消息失败:', error)
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestData),
+        signal: abortController.signal,
+        credentials: 'include' // 发送cookie
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      if (!response.body) {
+        throw new Error('Response body is null')
+      }
+
+      // 创建一个reader来读取流式数据
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+
+      // 持续读取数据流
+      let buffer = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        
+        if (done) {
+          console.log('✅ SSE流读取完成')
+          if (onComplete) {
+            onComplete()
+          }
+          break
+        }
+
+        // 解码接收到的数据
+        const chunk = decoder.decode(value, { stream: true })
+        buffer += chunk
+        
+        console.log('📥 收到数据块:', chunk)
+
+        // 处理SSE格式的数据（以 data: 开头，以两个换行符结束）
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || '' // 保留不完整的行
+
+        for (const line of lines) {
+          const trimmedLine = line.trim()
+          
+          // 跳过空行和注释行
+          if (!trimmedLine || trimmedLine.startsWith(':')) {
+            continue
+          }
+          
+          // 检查是否是标准SSE格式 (data: xxx)
+          if (trimmedLine.startsWith('data: ')) {
+            const data = trimmedLine.substring(6) // 移除 "data: " 前缀
+            if (data.trim() === '[DONE]') {
+              // 流结束标记
+              console.log('✅ 收到结束标记 [DONE]')
+              if (onComplete) {
+                onComplete()
+              }
+              reader.cancel()
+              return
+            }
+            if (data.trim()) {
+              console.log('📨 发送消息:', data)
+              onMessage(data)
+            }
+          } else if (trimmedLine) {
+            // 兼容纯文本流（没有 data: 前缀）
+            console.log('📨 发送纯文本消息:', trimmedLine)
+            onMessage(trimmedLine)
+          }
+        }
+      }
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('🛑 SSE连接已被用户取消')
+        return
+      }
+      console.error('❌ SSE连接错误:', error)
       if (onError) {
-        onError(event)
+        const errorEvent = new Event('error')
+        onError(errorEvent)
       }
     }
   }
 
-  eventSource.onerror = (error) => {
-    console.log('SSE 事件触发，连接状态:', eventSource.readyState)
-    
-    // 检查连接状态：0 = CONNECTING, 1 = OPEN, 2 = CLOSED
-    // 如果连接已关闭，这是正常完成，不是错误
-    if (eventSource.readyState === EventSource.CLOSED) {
-      console.log('✅ SSE 连接正常关闭，调用完成回调')
-      if (onComplete) {
-        onComplete()
-      }
-      eventSource.close()
-      return
-    }
-    
-    // 只有在连接未正常关闭时才是真正的错误
-    console.error('❌ SSE 连接异常:', error)
-    if (onError) {
-      onError(error)
-    }
-    eventSource.close()
-  }
+  // 启动fetch
+  fetchSSE()
 
-  // 监听自定义的 complete 事件（如果后端发送的话）
-  eventSource.addEventListener('complete', () => {
-    if (onComplete) {
-      onComplete()
-    }
-    eventSource.close()
-  })
+  // 返回一个模拟的EventSource对象，提供close方法
+  const mockEventSource = {
+    close: () => {
+      console.log('🛑 关闭SSE连接')
+      abortController.abort()
+    },
+    readyState: 1, // OPEN
+    CONNECTING: 0,
+    OPEN: 1,
+    CLOSED: 2
+  } as EventSource
 
-  // 监听 close 事件
-  eventSource.addEventListener('close', () => {
-    eventSource.close()
-    if (onComplete) {
-      onComplete()
-    }
-  })
-
-  return eventSource
+  return mockEventSource
 }

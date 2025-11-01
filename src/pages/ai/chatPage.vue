@@ -48,7 +48,7 @@
           v-model="userInput"
           :is-connecting="isConnecting"
           :chat-id="chatId"
-          @send="sendMessage"
+          @send="handleSendMessage"
         />
       </a-layout>
     </a-layout>
@@ -61,7 +61,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
 import { IconDoubleRight } from '@arco-design/web-vue/es/icon'
 import { createSSEConnection } from '@/utils/sse'
-import { listChatRooms, createChatRoom } from '@/api/aiController'
+import { listChatRooms, createChatRoom, getChatRoomMessages } from '@/api/aiController'
 
 // 导入子组件
 import ChatSidebar from './components/ChatSidebar.vue'
@@ -69,6 +69,7 @@ import ChatHeader from './components/ChatHeader.vue'
 import MessageList from './components/MessageList.vue'
 import ChatInput from './components/ChatInput.vue'
 import type { ChatMessage } from './components/MessageItem.vue'
+import type { ModelConfig } from './components/ChatInput.vue'
 
 // ==================== 路由相关 ====================
 const route = useRoute()
@@ -101,7 +102,7 @@ const generateChatId = (): string => {
  * 初始化聊天室
  * 从路由参数获取chatId，如果没有则生成新的
  */
-const initChatRoom = () => {
+const initChatRoom = async () => {
   const routeChatId = route.params.chatId as string
   if (routeChatId) {
     chatId.value = routeChatId
@@ -111,8 +112,8 @@ const initChatRoom = () => {
     router.replace(`/ai/chat/${newChatId}`)
   }
 
-  // 加载历史消息（从localStorage）
-  loadHistoryMessages()
+  // 加载历史消息（优先从后端加载）
+  await loadHistoryMessages()
   
   // 检查当前聊天室是否在历史记录列表中
   checkIfNewChatRoom()
@@ -172,23 +173,63 @@ const switchChatRoom = async (roomId: string) => {
 
   // 加载新会话的历史消息
   messages.value = []
-  loadHistoryMessages()
+  await loadHistoryMessages()
 }
 
 // ==================== 消息管理 ====================
 
 /**
- * 从localStorage加载历史消息
+ * 从后端加载历史消息
+ * 优先从后端加载，如果失败则从localStorage加载
  */
-const loadHistoryMessages = () => {
+const loadHistoryMessages = async () => {
+  try {
+    console.log('📖 开始加载聊天室历史消息:', chatId.value)
+    
+    // 尝试从后端加载
+    const response = await getChatRoomMessages({ chatroomId: chatId.value })
+    
+    console.log('📡 后端响应:', response)
+    
+    if (response.status === 200 && response.data.code === 0) {
+      const messageList = response.data.data || []
+      console.log('✅ 从后端加载了', messageList.length, '条历史消息')
+      
+      // 转换后端消息格式为前端消息格式
+      // ChatMemoryVO: { id, content, type: 'user'|'ai', timestamp }
+      messages.value = messageList.map((msg: API.ChatMemoryVO) => ({
+        role: msg.type as 'user' | 'ai',
+        content: msg.content || '',
+        timestamp: msg.timestamp ? new Date(msg.timestamp).getTime() : Date.now(),
+        isStreaming: false
+      }))
+      
+      console.log('📝 转换后的消息列表:', messages.value)
+      
+      // 同时保存到localStorage作为缓存
+      saveHistoryMessages()
+      return
+    } else {
+      console.warn('⚠️ 后端返回非成功状态:', response.data)
+    }
+  } catch (error) {
+    console.warn('⚠️ 从后端加载历史消息失败，尝试从本地缓存加载:', error)
+  }
+  
+  // 如果后端加载失败，从localStorage加载
   try {
     const historyKey = `chat_history_${chatId.value}`
     const historyData = localStorage.getItem(historyKey)
     if (historyData) {
       messages.value = JSON.parse(historyData)
+      console.log('📦 从localStorage加载了', messages.value.length, '条缓存消息')
+    } else {
+      console.log('ℹ️ 没有找到历史消息')
+      messages.value = []
     }
   } catch (error) {
-    console.error('加载历史消息失败:', error)
+    console.error('❌ 加载历史消息失败:', error)
+    messages.value = []
   }
 }
 
@@ -210,10 +251,25 @@ const saveHistoryMessages = () => {
  */
 const useSampleQuestion = (question: string) => {
   userInput.value = question
+  // 使用默认配置（标准文本模型，不开启额外功能）
+  const defaultConfig: ModelConfig = {
+    model: 'glm-4.5-flash',
+    isVision: false,
+    useWebSearch: false,
+    useRAG: false,
+    useToolCalling: false
+  }
   // 延迟一帧再发送，确保输入框已更新
   setTimeout(() => {
-    sendMessage()
+    sendMessage(defaultConfig)
   }, 0)
+}
+
+/**
+ * 处理发送消息事件（接收来自ChatInput的模型配置）
+ */
+const handleSendMessage = (config: ModelConfig) => {
+  sendMessage(config)
 }
 
 /**
@@ -222,10 +278,12 @@ const useSampleQuestion = (question: string) => {
  * 1. 验证输入
  * 2. 首次消息时创建聊天室
  * 3. 添加用户消息
- * 4. 建立SSE连接获取AI回复
+ * 4. 根据模型类型建立SSE连接获取AI回复
  * 5. 保存消息到localStorage
+ * 
+ * @param config 模型配置参数
  */
-const sendMessage = async () => {
+const sendMessage = async (config: ModelConfig) => {
   const prompt = userInput.value.trim()
 
   // 验证输入
@@ -311,9 +369,38 @@ const sendMessage = async () => {
   isLoading.value = true
 
   try {
+    // 根据模型类型构建请求参数
+    let requestData: any
+    let endpoint: string
+    
+    if (config.isVision) {
+      // 视觉模型请求
+      endpoint = '/ai/vision-chat'
+      requestData = {
+        userPrompt: prompt,
+        chatId: chatId.value,
+        imageUrls: [], // 暂时为空，后续可以添加图片上传功能
+        visionModelType: config.model === 'vision' ? 'vision' : 'vision_reasoning'
+      }
+    } else {
+      // 文本模型请求
+      endpoint = '/ai/chat'
+      requestData = {
+        userPrompt: prompt,
+        chatId: chatId.value,
+        modelName: config.model,
+        useWebSearch: config.useWebSearch || false,
+        useToolCalling: config.useToolCalling || false,
+        useRAG: config.useRAG || false
+      }
+    }
+
+    console.log('📤 发送请求到:', endpoint)
+    console.log('📦 请求参数:', requestData)
+
     eventSource = createSSEConnection(
-      prompt,
-      chatId.value,
+      endpoint,
+      requestData,
       // onMessage: 接收到数据流
       (data: string) => {
         isLoading.value = false
@@ -406,9 +493,9 @@ const loadChatRoomList = async () => {
  * 组件挂载
  * 初始化聊天室并加载历史记录
  */
-onMounted(() => {
-  initChatRoom()
-  loadChatRoomList()
+onMounted(async () => {
+  await initChatRoom()
+  await loadChatRoomList()
 })
 
 /**
@@ -427,11 +514,11 @@ onUnmounted(() => {
  */
 watch(
   () => route.params.chatId,
-  (newChatId) => {
+  async (newChatId) => {
     if (newChatId && newChatId !== chatId.value) {
       chatId.value = newChatId as string
       messages.value = []
-      loadHistoryMessages()
+      await loadHistoryMessages()
     }
   }
 )

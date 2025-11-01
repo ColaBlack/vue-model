@@ -229,7 +229,7 @@ import {
   IconLock
 } from '@arco-design/web-vue/es/icon'
 import { useUserStore } from '@/store/user'
-import { getLoginUser, updateUserProfile, updatePassword } from '@/api/userController'
+import { getLoginUser, updateMyProfile, updateMyPassword } from '@/api/userController'
 
 const userStore = useUserStore()
 
@@ -294,7 +294,7 @@ const handleSave = async () => {
 
   saving.value = true
   try {
-    const res = await updateUserProfile({
+    const res = await updateMyProfile({
       userName: userInfo.userName,
       userProfile: userInfo.userProfile,
       userAvatar: userInfo.userAvatar
@@ -351,7 +351,7 @@ const handlePasswordChange = async () => {
   }
 
   try {
-    const res = await updatePassword({
+    const res = await updateMyPassword({
       oldPassword: passwordForm.oldPassword,
       newPassword: passwordForm.newPassword
     })

@@ -1,7 +1,28 @@
 declare namespace API {
   type AIQuestionRequest = {
-    userPrompt?: string
-    chatId?: string
+    /** 用户提问内容 */
+    userPrompt: string
+    /** 会话ID，用于多轮对话 */
+    chatId: string
+    /** 文本模型名称 */
+    modelName?: 'glm-z1-flash' | 'glm-4.5-flash' | 'glm-4-flash'
+    /** 是否启用联网搜索 */
+    useWebSearch?: boolean
+    /** 是否启用工具调用（数据库查询等） */
+    useToolCalling?: boolean
+    /** 是否启用RAG功能（向量数据库检索增强） */
+    useRAG?: boolean
+  }
+
+  type AIVisionQuestionRequest = {
+    /** 用户提问内容 */
+    userPrompt: string
+    /** 会话ID，用于多轮对话 */
+    chatId: string
+    /** 图像URL列表，支持1-10张图片。可以是HTTP/HTTPS URL或Base64编码（data:image/jpeg;base64,...） */
+    imageUrls: string[]
+    /** 视觉模型类型 */
+    visionModelType?: 'vision' | 'vision_reasoning'
   }
 
   type BaseResponseBoolean = {
@@ -13,6 +34,12 @@ declare namespace API {
   type BaseResponseChatRoomVO = {
     code?: number
     data?: ChatRoomVO
+    message?: string
+  }
+
+  type BaseResponseListChatMemoryVO = {
+    code?: number
+    data?: ChatMemoryVO[]
     message?: string
   }
 
@@ -46,32 +73,58 @@ declare namespace API {
     message?: string
   }
 
+  type ChatMemoryVO = {
+    id?: number
+    content?: string
+    type?: string
+    timestamp?: string
+  }
+
   type ChatRoomAddRequest = {
-    userPrompt?: string
+    /** 用户初始提问内容，将作为聊天室标题的前10个字符 */
+    userPrompt: string
+    /** 用户ID（可选，不传则使用当前登录用户） */
     userId?: number
   }
 
   type ChatRoomVO = {
+    /** 聊天室ID */
     chatroom?: string
+    /** 聊天室标题 */
     title?: string
+    /** 聊天室创建时间 */
     createTime?: string
   }
 
   type DeleteRequest = {
-    id?: number
+    /** 要删除的记录ID */
+    id: number
+  }
+
+  type getChatRoomMessagesParams = {
+    /** 聊天室ID */
+    chatroomId: string
   }
 
   type getChatRoomParams = {
+    /** 聊天室ID */
     chatroomId: string
   }
 
   type LoginUserVO = {
+    /** 用户ID */
     id?: number
+    /** 用户昵称 */
     userName?: string
+    /** 用户头像URL */
     userAvatar?: string
+    /** 用户简介 */
     userProfile?: string
-    userRole?: string
+    /** 用户角色 */
+    userRole?: 'user' | 'admin' | 'ban'
+    /** 账号创建时间 */
     createTime?: string
+    /** 账号更新时间 */
     updateTime?: string
   }
 
@@ -112,15 +165,88 @@ declare namespace API {
   }
 
   type UserAddRequest = {
+    /** 用户昵称 */
     userName?: string
-    userAccount?: string
+    /** 用户账号 */
+    userAccount: string
+    /** 用户头像URL */
     userAvatar?: string
-    userRole?: string
+    /** 用户角色 */
+    userRole?: 'user' | 'admin'
   }
 
   type UserLoginRequest = {
+    /** 用户账号 */
+    userAccount: string
+    /** 用户密码 */
+    userPassword: string
+  }
+
+  type UserQueryRequest = {
+    current?: number
+    pageSize?: number
+    sortField?: string
+    sortOrder?: string
+    /** 用户ID */
+    id?: number
+    /** 用户昵称（模糊匹配） */
+    userName?: string
+    /** 用户账号（模糊匹配） */
     userAccount?: string
-    userPassword?: string
+    /** 用户简介（模糊匹配） */
+    userProfile?: string
+    /** 用户角色 */
+    userRole?: 'user' | 'admin' | 'ban'
+  }
+
+  type UserRegisterRequest = {
+    /** 用户账号 */
+    userAccount: string
+    /** 用户密码 */
+    userPassword: string
+    /** 确认密码 */
+    checkPassword: string
+  }
+
+  type UserUpdateMyRequest = {
+    userName?: string
+    userAvatar?: string
+    userProfile?: string
+  }
+
+  type UserUpdatePasswordRequest = {
+    /** 旧密码 */
+    oldPassword?: string
+    /** 新密码 */
+    newPassword?: string
+  }
+
+  // ==================== 管理员相关类型（暂未实现后端接口） ====================
+
+  type User = {
+    id?: number
+    userAccount?: string
+    userName?: string
+    userAvatar?: string
+    userProfile?: string
+    userRole?: string
+    createTime?: string
+    updateTime?: string
+  }
+
+  type UserAddRequest = {
+    userAccount: string
+    userName?: string
+    userAvatar?: string
+    userRole?: 'user' | 'admin'
+  }
+
+  type UserUpdateRequest = {
+    id: number
+    userName?: string
+    userAvatar?: string
+    userProfile?: string
+    userRole?: 'user' | 'admin' | 'ban'
   }
 
   type UserQueryRequest = {
@@ -132,20 +258,30 @@ declare namespace API {
     userName?: string
     userAccount?: string
     userProfile?: string
-    userRole?: string
+    userRole?: 'user' | 'admin' | 'ban'
   }
 
-  type UserRegisterRequest = {
-    userAccount?: string
-    userPassword?: string
-    checkPassword?: string
+  type DeleteRequest = {
+    id: number
   }
 
-  type UserUpdateRequest = {
-    id?: number
-    userName?: string
-    userAvatar?: string
-    userProfile?: string
-    userRole?: string
+  type PageUser = {
+    records?: User[]
+    total?: number
+    size?: number
+    current?: number
+    pages?: number
+  }
+
+  type BaseResponsePageUser = {
+    code?: number
+    data?: PageUser
+    message?: string
+  }
+
+  type BaseResponseLong = {
+    code?: number
+    data?: number
+    message?: string
   }
 }
