@@ -1,28 +1,41 @@
 /**
- * 聊天消息管理 Composable
+ * 聊天消息管理 Composable（重构版）
  * 
  * 功能：
  * - 消息列表管理
  * - 发送消息
  * - SSE 流式响应处理
  * - 消息本地持久化
+ * - 历史消息加载
  * 
- * 使用示例：
- * const {
- *   messages,
- *   userInput,
- *   isConnecting,
- *   isLoading,
- *   sendMessage,
- *   loadHistoryMessages
- * } = useChatMessages(chatId)
+ * 重构优化：
+ * - 使用统一的类型定义
+ * - 提取业务逻辑，提高可维护性
+ * - 优化代码结构，提高可读性
  */
 
 import { ref, Ref } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { createSSEConnection } from '@/utils/sse'
-import type { ChatMessage } from '../components/MessageItem.vue'
-import { MESSAGE_CONSTANTS, STORAGE_KEYS } from '../constants/chat'
+import { getChatRoomMessages } from '@/api/aiController'
+import type { ChatMessage } from '../types/message.types'
+import { MESSAGE_CONSTANTS, STORAGE_KEYS, API_CONSTANTS } from '../constants/chat'
+
+/**
+ * 模型配置接口
+ */
+export interface ModelConfig {
+  /** 模型名称 */
+  model: string
+  /** 是否为视觉模型 */
+  isVision: boolean
+  /** 是否启用联网搜索 */
+  useWebSearch?: boolean
+  /** 是否启用RAG */
+  useRAG?: boolean
+  /** 是否启用工具调用 */
+  useToolCalling?: boolean
+}
 
 /**
  * 聊天消息管理 Hook
@@ -57,7 +70,7 @@ export function useChatMessages(
    * 从 localStorage 加载历史消息
    * 根据当前聊天室ID加载对应的消息记录
    */
-  const loadHistoryMessages = () => {
+  const loadHistoryMessagesFromLocal = () => {
     if (!chatId.value) {
       console.warn('⚠️ 聊天室ID为空，无法加载历史消息')
       return
@@ -79,6 +92,63 @@ export function useChatMessages(
       console.error('❌ 加载历史消息失败:', error)
       messages.value = []
     }
+  }
+  
+  /**
+   * 从后端加载历史消息
+   * 优先从后端加载，如果失败则从localStorage加载
+   */
+  const loadHistoryMessages = async () => {
+    try {
+      console.log('📖 开始加载聊天室历史消息:', chatId.value)
+      
+      // 尝试从后端加载
+      const response = await getChatRoomMessages({ chatroomId: chatId.value })
+      
+      console.log('📡 后端响应:', response)
+      
+      if (response.status === 200 && response.data.code === API_CONSTANTS.SUCCESS_CODE) {
+        const messageList = response.data.data || []
+        console.log('✅ 从后端加载了', messageList.length, '条历史消息')
+        
+        // 转换后端消息格式为前端消息格式
+        messages.value = messageList.map((msg: API.ChatMemoryVO) => {
+          // 后端可能返回各种格式的type字段，需要统一处理
+          const msgType = (msg.type || '').toLowerCase().trim()
+          
+          // 判断是否为用户消息
+          const isUserMessage = ['user', 'human'].includes(msgType)
+          const role = isUserMessage ? 'user' : 'ai'
+          
+          console.log('📝 加载历史消息:', {
+            原始type: msg.type,
+            标准化type: msgType,
+            转换后role: role,
+            内容预览: msg.content?.substring(0, 50)
+          })
+          
+          return {
+            role: role as 'user' | 'ai',
+            content: msg.content || '',
+            timestamp: msg.timestamp ? new Date(msg.timestamp).getTime() : Date.now(),
+            isStreaming: false
+          }
+        })
+        
+        console.log('📝 转换后的消息列表:', messages.value)
+        
+        // 同时保存到localStorage作为缓存
+        saveHistoryMessages()
+        return
+      } else {
+        console.warn('⚠️ 后端返回非成功状态:', response.data)
+      }
+    } catch (error) {
+      console.warn('⚠️ 从后端加载历史消息失败，尝试从本地缓存加载:', error)
+    }
+    
+    // 如果后端加载失败，从localStorage加载
+    loadHistoryMessagesFromLocal()
   }
   
   /**
@@ -108,10 +178,12 @@ export function useChatMessages(
    * 1. 验证输入
    * 2. 首次消息时调用 onFirstMessage 回调（创建聊天室）
    * 3. 添加用户消息
-   * 4. 建立 SSE 连接获取 AI 回复
+   * 4. 根据模型配置建立 SSE 连接获取 AI 回复
    * 5. 保存消息到 localStorage
+   * 
+   * @param config 模型配置参数
    */
-  const sendMessage = async () => {
+  const sendMessage = async (config: ModelConfig) => {
     const prompt = userInput.value.trim()
 
     // 1. 验证输入
@@ -164,9 +236,38 @@ export function useChatMessages(
     isLoading.value = true
 
     try {
+      // 根据模型类型构建请求参数
+      let requestData: any
+      let endpoint: string
+      
+      if (config.isVision) {
+        // 视觉模型请求
+        endpoint = '/ai/vision-chat'
+        requestData = {
+          userPrompt: prompt,
+          chatId: chatId.value,
+          imageUrls: [], // 暂时为空，后续可以添加图片上传功能
+          visionModelType: config.model === 'vision' ? 'vision' : 'vision_reasoning'
+        }
+      } else {
+        // 文本模型请求
+        endpoint = '/ai/chat'
+        requestData = {
+          userPrompt: prompt,
+          chatId: chatId.value,
+          modelName: config.model,
+          useWebSearch: config.useWebSearch || false,
+          useToolCalling: config.useToolCalling || false,
+          useRAG: config.useRAG || false
+        }
+      }
+
+      console.log('📤 发送请求到:', endpoint)
+      console.log('📦 请求参数:', requestData)
+
       eventSource = createSSEConnection(
-        prompt,
-        chatId.value,
+        endpoint,
+        requestData,
         
         // onMessage: 接收到数据流
         (data: string) => {
@@ -174,7 +275,7 @@ export function useChatMessages(
           messages.value[aiMessageIndex].content += data
         },
         
-        // onError: 发生错误（只有真正的错误才会触发）
+        // onError: 发生错误
         (error: Event) => {
           console.error('❌ SSE连接错误:', error)
           isConnecting.value = false
@@ -186,7 +287,6 @@ export function useChatMessages(
             messages.value[aiMessageIndex].content = '抱歉，连接出现问题，请稍后重试。'
             Message.error('连接失败，请稍后重试')
           } else {
-            // 如果已经有内容了，说明部分成功，不显示错误
             console.log('⚠️ 连接中断，但已接收到部分内容')
           }
           
@@ -217,12 +317,24 @@ export function useChatMessages(
    * 将示例问题填充到输入框并发送
    * 
    * @param question 示例问题文本
+   * @param config 模型配置（可选，默认使用标准配置）
    */
-  const useSampleQuestion = (question: string) => {
+  const useSampleQuestion = (question: string, config?: ModelConfig) => {
     userInput.value = question
+    
+    // 使用默认配置或传入的配置
+    const defaultConfig: ModelConfig = {
+      model: 'glm-4.5-flash',
+      isVision: false,
+      useWebSearch: false,
+      useRAG: false,
+      useToolCalling: false,
+      ...config
+    }
+    
     // 延迟一帧再发送，确保输入框已更新
     setTimeout(() => {
-      sendMessage()
+      sendMessage(defaultConfig)
     }, 0)
   }
   
@@ -265,4 +377,3 @@ export function useChatMessages(
     clearMessages
   }
 }
-

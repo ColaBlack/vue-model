@@ -83,6 +83,9 @@ export const API_CONSTANTS = {
   /** HTTP 成功状态码 */
   SUCCESS_STATUS: 200,
   
+  /** 业务成功状态码（后端返回的code字段） */
+  SUCCESS_CODE: 200,
+  
   /** 请求超时时间（毫秒） */
   REQUEST_TIMEOUT: 30000
 } as const

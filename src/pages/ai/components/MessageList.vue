@@ -43,9 +43,10 @@
 
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
-import MessageItem, { type ChatMessage } from './MessageItem.vue'
+import MessageItem from './MessageItem.vue'
 import SampleQuestions from './message/SampleQuestions.vue'
 import ThinkingIndicator from './message/ThinkingIndicator.vue'
+import type { ChatMessage } from '../types/message.types'
 
 /**
  * 组件属性类型定义
