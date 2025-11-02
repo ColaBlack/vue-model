@@ -191,18 +191,36 @@ const loadHistoryMessages = async () => {
     
     console.log('📡 后端响应:', response)
     
-    if (response.status === 200 && response.data.code === 0) {
+    if (response.status === 200 && response.data.code === 200) {
       const messageList = response.data.data || []
       console.log('✅ 从后端加载了', messageList.length, '条历史消息')
       
       // 转换后端消息格式为前端消息格式
       // ChatMemoryVO: { id, content, type: 'user'|'ai', timestamp }
-      messages.value = messageList.map((msg: API.ChatMemoryVO) => ({
-        role: msg.type as 'user' | 'ai',
-        content: msg.content || '',
-        timestamp: msg.timestamp ? new Date(msg.timestamp).getTime() : Date.now(),
-        isStreaming: false
-      }))
+      messages.value = messageList.map((msg: API.ChatMemoryVO) => {
+        // 后端可能返回各种格式的type字段，需要统一处理
+        // 可能的值：'user', 'USER', 'human', 'HUMAN'
+        //          'ai', 'AI', 'assistant', 'ASSISTANT', 'bot', 'BOT'
+        const msgType = (msg.type || '').toLowerCase().trim()
+        
+        // 判断是否为用户消息
+        const isUserMessage = ['user', 'human'].includes(msgType)
+        const role = isUserMessage ? 'user' : 'ai'
+        
+        console.log('📝 加载历史消息:', {
+          原始type: msg.type,
+          标准化type: msgType,
+          转换后role: role,
+          内容预览: msg.content?.substring(0, 50)
+        })
+        
+        return {
+          role: role as 'user' | 'ai',
+          content: msg.content || '',
+          timestamp: msg.timestamp ? new Date(msg.timestamp).getTime() : Date.now(),
+          isStreaming: false
+        }
+      })
       
       console.log('📝 转换后的消息列表:', messages.value)
       

@@ -8,7 +8,7 @@ declare namespace API {
     modelName?: 'glm-z1-flash' | 'glm-4.5-flash' | 'glm-4-flash'
     /** 是否启用联网搜索 */
     useWebSearch?: boolean
-    /** 是否启用工具调用（数据库查询等） */
+    /** 是否使用监测数据 */
     useToolCalling?: boolean
     /** 是否启用RAG功能（向量数据库检索增强） */
     useRAG?: boolean
@@ -221,67 +221,16 @@ declare namespace API {
     newPassword?: string
   }
 
-  // ==================== 管理员相关类型（暂未实现后端接口） ====================
-
-  type User = {
-    id?: number
-    userAccount?: string
-    userName?: string
-    userAvatar?: string
-    userProfile?: string
-    userRole?: string
-    createTime?: string
-    updateTime?: string
-  }
-
-  type UserAddRequest = {
-    userAccount: string
-    userName?: string
-    userAvatar?: string
-    userRole?: 'user' | 'admin'
-  }
-
   type UserUpdateRequest = {
+    /** 用户ID */
     id: number
+    /** 用户昵称 */
     userName?: string
+    /** 用户头像URL */
     userAvatar?: string
+    /** 用户简介 */
     userProfile?: string
+    /** 用户角色 */
     userRole?: 'user' | 'admin' | 'ban'
-  }
-
-  type UserQueryRequest = {
-    current?: number
-    pageSize?: number
-    sortField?: string
-    sortOrder?: string
-    id?: number
-    userName?: string
-    userAccount?: string
-    userProfile?: string
-    userRole?: 'user' | 'admin' | 'ban'
-  }
-
-  type DeleteRequest = {
-    id: number
-  }
-
-  type PageUser = {
-    records?: User[]
-    total?: number
-    size?: number
-    current?: number
-    pages?: number
-  }
-
-  type BaseResponsePageUser = {
-    code?: number
-    data?: PageUser
-    message?: string
-  }
-
-  type BaseResponseLong = {
-    code?: number
-    data?: number
-    message?: string
   }
 }

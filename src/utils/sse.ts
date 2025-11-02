@@ -74,38 +74,53 @@ export function createSSEConnection(
         
         console.log('📥 收到数据块:', chunk)
 
-        // 处理SSE格式的数据（以 data: 开头，以两个换行符结束）
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || '' // 保留不完整的行
-
-        for (const line of lines) {
-          const trimmedLine = line.trim()
-          
-          // 跳过空行和注释行
-          if (!trimmedLine || trimmedLine.startsWith(':')) {
-            continue
+        // 处理SSE格式的数据（以 data: 开头，以 \n\n 结束）
+        // SSE标准格式：data: 内容\n\n
+        // 注意：内容本身可能包含 \n，所以不能简单地用 \n 分割
+        while (true) {
+          // 查找 \n\n 作为消息分隔符
+          const separatorIndex = buffer.indexOf('\n\n')
+          if (separatorIndex === -1) {
+            // 没有找到完整的消息，继续读取
+            break
           }
-          
-          // 检查是否是标准SSE格式 (data: xxx)
-          if (trimmedLine.startsWith('data: ')) {
-            const data = trimmedLine.substring(6) // 移除 "data: " 前缀
-            if (data.trim() === '[DONE]') {
-              // 流结束标记
-              console.log('✅ 收到结束标记 [DONE]')
-              if (onComplete) {
-                onComplete()
+
+          // 提取一条完整的消息
+          const message = buffer.substring(0, separatorIndex)
+          buffer = buffer.substring(separatorIndex + 2) // 移除已处理的消息和分隔符
+
+          // 解析消息内容
+          const lines = message.split('\n')
+          for (const line of lines) {
+            const trimmedLine = line.trim()
+            
+            // 跳过空行和注释行
+            if (!trimmedLine || trimmedLine.startsWith(':')) {
+              continue
+            }
+            
+            // 检查是否是标准SSE格式 (data: xxx)
+            if (trimmedLine.startsWith('data:')) {
+              // 移除 "data:" 前缀（注意可能是 "data: " 或 "data:"）
+              let data = trimmedLine.substring(5)
+              if (data.startsWith(' ')) {
+                data = data.substring(1) // 移除可选的空格
               }
-              reader.cancel()
-              return
+              
+              if (data.trim() === '[DONE]') {
+                // 流结束标记
+                console.log('✅ 收到结束标记 [DONE]')
+                if (onComplete) {
+                  onComplete()
+                }
+                reader.cancel()
+                return
+              }
+              if (data) {
+                console.log('📨 发送消息:', data)
+                onMessage(data)
+              }
             }
-            if (data.trim()) {
-              console.log('📨 发送消息:', data)
-              onMessage(data)
-            }
-          } else if (trimmedLine) {
-            // 兼容纯文本流（没有 data: 前缀）
-            console.log('📨 发送纯文本消息:', trimmedLine)
-            onMessage(trimmedLine)
           }
         }
       }
