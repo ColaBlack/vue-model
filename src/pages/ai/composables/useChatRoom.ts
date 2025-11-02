@@ -77,13 +77,11 @@ export function useChatRoom() {
     if (routeChatId) {
       chatId.value = routeChatId
       isNewChatRoom.value = false
-      console.log('📂 加载现有聊天室:', routeChatId)
     } else {
       const newChatId = generateChatId()
       chatId.value = newChatId
       isNewChatRoom.value = true
       router.replace(`/ai/chat/${newChatId}`)
-      console.log('🆕 创建新聊天室:', newChatId)
     }
   }
   
@@ -93,13 +91,10 @@ export function useChatRoom() {
    */
   const createNewChat = () => {
     const newChatId = generateChatId()
-    console.log('🆕 创建新聊天，ID:', newChatId)
     
     router.push(`/ai/chat/${newChatId}`)
     chatId.value = newChatId
     isNewChatRoom.value = true
-    
-    console.log('  - isNewChatRoom 设置为 true')
   }
   
   /**
@@ -111,11 +106,8 @@ export function useChatRoom() {
    */
   const switchChatRoom = async (roomId: string): Promise<void> => {
     if (!roomId || roomId === chatId.value) {
-      console.log('⚠️ 尝试切换到当前聊天室或无效ID，已忽略')
       return
     }
-    
-    console.log('🔄 切换聊天室:', roomId)
     
     router.push(`/ai/chat/${roomId}`)
     chatId.value = roomId
@@ -133,7 +125,6 @@ export function useChatRoom() {
     
     try {
       const response = await listChatRooms()
-      console.log('📋 历史聊天室列表响应:', response)
 
       // 检查HTTP状态码200表示成功
       if (response.status === API_CONSTANTS.SUCCESS_STATUS) {
@@ -141,24 +132,16 @@ export function useChatRoom() {
 
         if (Array.isArray(data)) {
           chatRoomList.value = data
-          console.log(`✅ 成功加载历史聊天室: ${chatRoomList.value.length} 个`)
-
-          if (chatRoomList.value.length === 0) {
-            console.log('💡 提示：暂无历史聊天记录，发送第一条消息后会自动创建')
-          }
           
           // 重新检查当前聊天室是否为新建
           checkIfNewChatRoom()
         } else {
-          console.warn('⚠️ 返回的数据格式不是数组:', data)
           chatRoomList.value = []
         }
       } else {
-        console.error('❌ 加载聊天记录失败，状态码:', response.status)
         Message.error(`加载聊天记录失败: HTTP ${response.status}`)
       }
     } catch (error: any) {
-      console.error('❌ 加载聊天记录失败:', error)
       Message.error('加载聊天记录失败，请检查网络连接')
     } finally {
       loadingHistory.value = false
@@ -174,9 +157,7 @@ export function useChatRoom() {
    */
   const createChatRoom = async (userPrompt: string): Promise<string | null> => {
     try {
-      console.log('🔨 正在创建聊天室...')
       const response = await apiCreateChatRoom({ userPrompt })
-      console.log('✅ 创建聊天室响应:', response)
 
       // 检查HTTP状态码200表示成功
       if (response.status === API_CONSTANTS.SUCCESS_STATUS) {
@@ -184,33 +165,26 @@ export function useChatRoom() {
         const backendChatId = data?.chatroom || data?.chatroomId || data?.id
 
         if (backendChatId) {
-          console.log('✅ 聊天室创建成功，ID:', backendChatId)
-
           // 更新为后端返回的chatId
           if (backendChatId !== chatId.value) {
-            console.log('🔄 更新 chatId 从', chatId.value, '到', backendChatId)
             chatId.value = backendChatId
             router.replace(`/ai/chat/${backendChatId}`)
           }
           
           // 延迟刷新聊天室列表，确保后端已经保存
           setTimeout(() => {
-            console.log('🔄 聊天室创建成功，刷新历史记录列表')
             loadChatRoomList()
           }, TIME_CONSTANTS.REFRESH_DELAY)
           
           return backendChatId
         } else {
-          console.warn('⚠️ 后端未返回聊天室ID，使用前端生成的ID')
           return null
         }
       } else {
-        console.error('❌ 创建聊天室失败，状态码:', response.status)
         Message.warning('聊天室创建失败，但可以继续对话')
         return null
       }
     } catch (error: any) {
-      console.error('❌ 创建聊天室失败:', error)
       Message.warning('聊天室创建失败，但可以继续对话')
       return null
     }
@@ -223,13 +197,6 @@ export function useChatRoom() {
   const checkIfNewChatRoom = () => {
     const exists = currentRoomExists.value
     isNewChatRoom.value = !exists
-    
-    console.log('🔍 检查聊天室状态:')
-    console.log('  - chatId:', chatId.value)
-    console.log('  - 列表中的聊天室数量:', chatRoomList.value.length)
-    console.log('  - 是否存在于列表中:', exists)
-    console.log('  - isNewChatRoom:', isNewChatRoom.value)
-    console.log('  - 列表:', chatRoomList.value.map(r => r.chatroom))
   }
   
   // ==================== 返回 ====================

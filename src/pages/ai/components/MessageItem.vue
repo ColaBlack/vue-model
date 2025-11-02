@@ -1,17 +1,20 @@
 <!--
   单条消息组件
+  
   功能：
   - 显示用户或AI的消息
-  - 显示头像
-  - 显示时间
-  - 显示流式输入光标
+  - 显示头像和时间
+  - 支持流式输出
+  - 支持深度思考过程展示
+  - 支持 Markdown 渲染
+  - 支持复制消息
 -->
 <template>
-  <div class="message-wrapper" :class="message.role === 'user' ? 'message-user' : 'message-ai'">
+  <div class="message-wrapper" :class="message.role === 'USER' ? 'message-user' : 'message-ai'">
     <div class="message-content">
       <!-- 头像 -->
       <a-avatar :size="40" class="message-avatar">
-        <template v-if="message.role === 'user'">
+        <template v-if="message.role === 'USER'">
           <icon-user />
         </template>
         <template v-else>
@@ -21,38 +24,29 @@
 
       <!-- 消息气泡 -->
       <div class="message-bubble">
-        <!-- 角色名称 -->
+        <!-- 顶部栏：角色名称 + 操作按钮 -->
+        <div class="message-header">
         <div class="message-role">
-          {{ message.role === 'user' ? '我' : 'AI助手' }}
+            {{ message.role === 'USER' ? '我' : 'AI助手' }}
+        </div>
+          
+          <!-- 复制按钮 -->
+          <CopyButton :text="copyText" />
         </div>
 
         <!-- 思考过程（仅AI消息且包含<think>标签时显示） -->
-        <div v-if="message.role === 'ai' && parsedContent.thinkingProcess" class="thinking-section">
-          <div class="thinking-header" @click="toggleThinking">
-            <icon-bulb class="thinking-icon" />
-            <span class="thinking-title">深度思考过程</span>
-            <icon-down v-if="!showThinking" class="toggle-icon" />
-            <icon-up v-else class="toggle-icon" />
-          </div>
-          <a-collapse-transition>
-            <div v-show="showThinking" class="thinking-content">
-              {{ parsedContent.thinkingProcess }}
-            </div>
-          </a-collapse-transition>
-        </div>
+        <ThinkingSection 
+          v-if="isAiMessage && parsedContent.thinkingProcess" 
+          :content="parsedContent.thinkingProcess"
+        />
 
         <!-- 正常消息内容 -->
-        <div class="message-text" v-if="parsedContent.normalContent || message.isStreaming">
-          {{ parsedContent.normalContent }}
-          <!-- 流式输入光标 -->
-          <span v-if="message.isStreaming" class="typing-cursor">|</span>
-        </div>
-        
-        <!-- 如果没有正常内容且不在流式输出，显示提示 -->
-        <div v-else-if="message.role === 'ai' && parsedContent.thinkingProcess" class="empty-content-tip">
-          <icon-info-circle style="margin-right: 4px;" />
-          <span>AI正在深度思考中，请展开上方查看思考过程</span>
-        </div>
+        <MessageContent 
+          :content="parsedContent.normalContent"
+          :is-streaming="message.isStreaming"
+          :is-ai="isAiMessage"
+          :has-thinking-process="!!parsedContent.thinkingProcess"
+        />
 
         <!-- 时间戳 -->
         <div class="message-time">
@@ -64,94 +58,54 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { IconUser, IconRobot, IconBulb, IconDown, IconUp, IconInfoCircle } from '@arco-design/web-vue/es/icon'
+import { computed } from 'vue'
+import { IconUser, IconRobot } from '@arco-design/web-vue/es/icon'
+import { marked } from 'marked'
+import CopyButton from './message/CopyButton.vue'
+import ThinkingSection from './message/ThinkingSection.vue'
+import MessageContent from './message/MessageContent.vue'
+import { parseMessageContent } from '../utils/messageParser'
+import { formatTime } from '../utils/timeFormat'
+import type { ChatMessage } from '../types'
 
-/**
- * 消息接口定义
- */
-export interface ChatMessage {
-  role: 'user' | 'ai' // 消息角色
-  content: string // 消息内容
-  timestamp: number // 时间戳
-  isStreaming?: boolean // 是否正在流式输出
-}
+// 配置 marked 选项
+marked.setOptions({
+  breaks: true,
+  gfm: true,
+})
 
-/**
- * 组件属性定义
- */
 interface Props {
-  message: ChatMessage // 消息对象
+  message: ChatMessage
 }
 
-// 接收属性
 const props = defineProps<Props>()
 
-// 控制思考过程的展开/折叠状态
-const showThinking = ref(false)
-
 /**
- * 切换思考过程的显示状态
+ * 判断是否为AI消息
  */
-const toggleThinking = () => {
-  showThinking.value = !showThinking.value
-}
-
-/**
- * 解析消息内容，分离思考过程和正常内容
- * 深度推理模型会输出 <think>...</think> 包裹的思考过程
- */
-const parsedContent = computed(() => {
-  const content = props.message.content
-  
-  // 匹配完整的 <think>...</think> 标签
-  const thinkRegex = /<think>([\s\S]*?)<\/think>/g
-  const matches = content.match(thinkRegex)
-  
-  if (matches && matches.length > 0) {
-    // 提取所有思考过程
-    let thinkingProcess = ''
-    let normalContent = content
-    
-    matches.forEach(match => {
-      const innerMatch = match.match(/<think>([\s\S]*?)<\/think>/)
-      if (innerMatch) {
-        thinkingProcess += (thinkingProcess ? '\n\n' : '') + innerMatch[1].trim()
-      }
-      // 从正常内容中移除思考标签
-      normalContent = normalContent.replace(match, '')
-    })
-    
-    normalContent = normalContent.trim()
-    
-    return {
-      thinkingProcess,
-      normalContent: normalContent || '' // 如果没有正常内容，返回空字符串而不是占位文本
-    }
-  }
-  
-  // 没有完整的思考过程标签，直接返回原内容
-  // 这样在流式输出时，未完成的标签也会正常显示
-  return {
-    thinkingProcess: '',
-    normalContent: content
-  }
+const isAiMessage = computed(() => {
+  return props.message.role === 'AI' || props.message.role === 'ASSISTANT'
 })
 
 /**
- * 格式化时间（HH:MM 格式）
- * @param timestamp 时间戳
- * @returns 格式化后的时间字符串
+ * 解析消息内容，分离思考过程和正常内容
  */
-const formatTime = (timestamp: number): string => {
-  const date = new Date(timestamp)
-  const hours = date.getHours().toString().padStart(2, '0')
-  const minutes = date.getMinutes().toString().padStart(2, '0')
-  return `${hours}:${minutes}`
-}
+const parsedContent = computed(() => {
+  return parseMessageContent(props.message.content)
+})
+
+/**
+ * 复制按钮要复制的文本
+ * 只复制正常内容，不包括思考过程
+ */
+const copyText = computed(() => {
+  return parsedContent.value.normalContent || props.message.content || ''
+})
 </script>
 
 <style scoped lang="less">
+@import '../styles/index.less';
+
 // 消息容器
 .message-wrapper {
   margin-bottom: 24px;
@@ -219,39 +173,20 @@ const formatTime = (timestamp: number): string => {
   word-break: break-word;
 }
 
-// 角色名称
+// 消息头部（角色名称 + 操作按钮）
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  gap: 8px;
+}
+
 .message-role {
   font-size: 12px;
   opacity: 0.8;
-  margin-bottom: 4px;
   font-weight: 600;
-}
-
-// 消息文本
-.message-text {
-  font-size: 14px;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  position: relative;
-}
-
-// 流式输入光标（闪烁动画）
-.typing-cursor {
-  display: inline-block;
-  animation: blink 1s infinite;
-  margin-left: 2px;
-}
-
-// 闪烁动画
-@keyframes blink {
-  0%,
-  50% {
-    opacity: 1;
-  }
-  51%,
-  100% {
-    opacity: 0;
-  }
+  flex: 1;
 }
 
 // 时间戳
@@ -261,140 +196,19 @@ const formatTime = (timestamp: number): string => {
   margin-top: 4px;
 }
 
-// ==================== 思考过程样式 ====================
-
-// 思考过程区域
-.thinking-section {
-  margin-bottom: 12px;
-  border: 1px solid #e5e6eb;
-  border-radius: 8px;
-  overflow: hidden;
-  background: linear-gradient(135deg, #fff9e6 0%, #fff5d9 100%);
-  transition: all 0.3s ease;
-
-  &:hover {
-    border-color: #ffb84d;
-    box-shadow: 0 2px 8px rgba(255, 184, 77, 0.15);
-  }
+// 复制按钮显示控制
+:deep(.copy-button) {
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
-// 思考过程头部（可点击展开/折叠）
-.thinking-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.2s ease;
-
-  &:hover {
-    background: rgba(255, 184, 77, 0.1);
-  }
-
-  &:active {
-    background: rgba(255, 184, 77, 0.15);
-  }
-}
-
-// 灯泡图标
-.thinking-icon {
-  color: #ff9a2e;
-  font-size: 16px;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-// 脉冲动画
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.05);
-  }
-}
-
-// 思考标题
-.thinking-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #e68a00;
-  flex: 1;
-}
-
-// 展开/折叠图标
-.toggle-icon {
-  font-size: 14px;
-  color: #86909c;
-  transition: transform 0.3s ease;
-}
-
-// 思考内容
-.thinking-content {
-  padding: 12px;
-  font-size: 13px;
-  line-height: 1.7;
-  color: #4e5969;
-  background: #fffbf0;
-  border-top: 1px dashed #ffe7ba;
-  white-space: pre-wrap;
-  word-break: break-word;
-  max-height: 400px;
-  overflow-y: auto;
-  
-  // 美化滚动条
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-  
-  &::-webkit-scrollbar-track {
-    background: #fff5e6;
-    border-radius: 3px;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background: #ffb84d;
-    border-radius: 3px;
+.message-bubble:hover {
+  :deep(.copy-button) {
+    opacity: 0.6;
     
     &:hover {
-      background: #ff9a2e;
+      opacity: 1;
     }
   }
 }
-
-// 用户消息中的思考区域（不应该出现，但做兼容处理）
-.message-user .thinking-section {
-  background: linear-gradient(135deg, #e8f3ff 0%, #d4e8ff 100%);
-  
-  .thinking-icon {
-    color: #165dff;
-  }
-  
-  .thinking-title {
-    color: #0e42d2;
-  }
-  
-  .thinking-content {
-    background: #f0f8ff;
-    border-top-color: #bedaff;
-    color: #1d2129;
-  }
-}
-
-// 空内容提示（仅有思考过程，没有正常输出时）
-.empty-content-tip {
-  display: flex;
-  align-items: center;
-  padding: 8px 12px;
-  background: #f0f8ff;
-  border-radius: 6px;
-  border: 1px dashed #bedaff;
-  color: #4e5969;
-  font-size: 13px;
-  font-style: italic;
-  margin-bottom: 8px;
-}
 </style>
-

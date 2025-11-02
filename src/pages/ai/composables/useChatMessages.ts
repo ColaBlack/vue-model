@@ -59,7 +59,6 @@ export function useChatMessages(
    */
   const loadHistoryMessages = () => {
     if (!chatId.value) {
-      console.warn('⚠️ 聊天室ID为空，无法加载历史消息')
       return
     }
     
@@ -70,13 +69,10 @@ export function useChatMessages(
       if (historyStr) {
         const loadedMessages = JSON.parse(historyStr)
         messages.value = loadedMessages
-        console.log(`📦 从本地存储加载了 ${loadedMessages.length} 条消息`)
       } else {
         messages.value = []
-        console.log('📭 本地存储中没有历史消息')
       }
     } catch (error) {
-      console.error('❌ 加载历史消息失败:', error)
       messages.value = []
     }
   }
@@ -87,16 +83,14 @@ export function useChatMessages(
    */
   const saveHistoryMessages = () => {
     if (!chatId.value) {
-      console.warn('⚠️ 聊天室ID为空，无法保存消息')
       return
     }
     
     try {
       const historyKey = `${STORAGE_KEYS.CHAT_HISTORY_PREFIX}${chatId.value}`
       localStorage.setItem(historyKey, JSON.stringify(messages.value))
-      console.log(`💾 已保存 ${messages.value.length} 条消息到本地存储`)
     } catch (error) {
-      console.error('❌ 保存历史消息失败:', error)
+      // 静默处理保存失败
     }
   }
   
@@ -116,7 +110,6 @@ export function useChatMessages(
 
     // 1. 验证输入
     if (!prompt || isConnecting.value) {
-      console.log('⚠️ 输入为空或正在发送中，已忽略')
       return
     }
 
@@ -132,7 +125,6 @@ export function useChatMessages(
 
     // 2. 如果是第一条消息，先创建聊天室记录
     const isFirstMessage = messages.value.length === 0
-    console.log('📝 发送消息 - isFirstMessage:', isFirstMessage)
     
     if (isFirstMessage && onFirstMessage) {
       await onFirstMessage(prompt)
@@ -176,7 +168,6 @@ export function useChatMessages(
         
         // onError: 发生错误（只有真正的错误才会触发）
         (error: Event) => {
-          console.error('❌ SSE连接错误:', error)
           isConnecting.value = false
           isLoading.value = false
           messages.value[aiMessageIndex].isStreaming = false
@@ -185,9 +176,6 @@ export function useChatMessages(
           if (messages.value[aiMessageIndex].content === '') {
             messages.value[aiMessageIndex].content = '抱歉，连接出现问题，请稍后重试。'
             Message.error('连接失败，请稍后重试')
-          } else {
-            // 如果已经有内容了，说明部分成功，不显示错误
-            console.log('⚠️ 连接中断，但已接收到部分内容')
           }
           
           saveHistoryMessages()
@@ -195,7 +183,6 @@ export function useChatMessages(
         
         // onComplete: 完成
         () => {
-          console.log('✅ SSE 连接完成')
           isConnecting.value = false
           isLoading.value = false
           messages.value[aiMessageIndex].isStreaming = false
@@ -203,7 +190,6 @@ export function useChatMessages(
         }
       )
     } catch (error) {
-      console.error('❌ 创建SSE连接失败:', error)
       isConnecting.value = false
       isLoading.value = false
       messages.value[aiMessageIndex].isStreaming = false
@@ -232,7 +218,6 @@ export function useChatMessages(
    */
   const closeConnection = () => {
     if (eventSource) {
-      console.log('🔌 关闭 SSE 连接')
       eventSource.close()
       eventSource = null
     }
@@ -244,7 +229,6 @@ export function useChatMessages(
    */
   const clearMessages = () => {
     messages.value = []
-    console.log('🗑️ 清空消息列表')
   }
   
   // ==================== 返回 ====================
