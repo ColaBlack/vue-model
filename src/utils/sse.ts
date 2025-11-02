@@ -17,6 +17,10 @@ export function createSSEConnection(
   onComplete?: () => void
 ): EventSource {
   const url = `${BASE_URL}${endpoint}`
+  console.log('🔗 创建SSE连接:', url)
+  console.log('📦 请求数据:', requestData)
+
+  // 创建一个AbortController用于取消请求
   const abortController = new AbortController()
   
   // 使用fetch进行POST请求并处理流式响应
@@ -57,6 +61,7 @@ export function createSSEConnection(
         const { done, value } = await reader.read()
         
         if (done) {
+          console.log('✅ SSE流读取完成')
           if (onComplete) {
             onComplete()
           }
@@ -66,50 +71,50 @@ export function createSSEConnection(
         // 解码接收到的数据
         const chunk = decoder.decode(value, { stream: true })
         buffer += chunk
+        
+        console.log('📥 收到数据块:', chunk)
 
-        // 处理SSE格式：data:token1data:token2...data:tokenN\n\n
-        // 多个 data: 标记组成一个事件，\n\n 是事件分隔符
-        
-        // 按照 \n\n 分割出完整的事件
-        const events = buffer.split('\n\n')
-        
-        // 保留最后一个片段（可能不完整）
-        buffer = events.pop() || ''
-        
-        // 处理所有完整的事件
-        for (const event of events) {
-          if (!event) continue
+        // 处理SSE格式的数据（以 data: 开头，以两个换行符结束）
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || '' // 保留不完整的行
+
+        for (const line of lines) {
+          const trimmedLine = line.trim()
           
-          // 将事件按 data: 分割，提取所有token
-          const tokens = event.split('data:')
-          
-          // 拼接所有非空token（第一个token通常是空的，因为字符串以data:开头）
-          let eventContent = ''
-          for (const token of tokens) {
-            if (token !== '') {
-              eventContent += token
-            }
+          // 跳过空行和注释行
+          if (!trimmedLine || trimmedLine.startsWith(':')) {
+            continue
           }
           
-          // 检查是否是结束标记
-          if (eventContent.trim() === '[DONE]') {
-            if (onComplete) {
-              onComplete()
+          // 检查是否是标准SSE格式 (data: xxx)
+          if (trimmedLine.startsWith('data: ')) {
+            const data = trimmedLine.substring(6) // 移除 "data: " 前缀
+            if (data.trim() === '[DONE]') {
+              // 流结束标记
+              console.log('✅ 收到结束标记 [DONE]')
+              if (onComplete) {
+                onComplete()
+              }
+              reader.cancel()
+              return
             }
-            reader.cancel()
-            return
-          }
-          
-          // 发送内容
-          if (eventContent !== '') {
-            onMessage(eventContent)
+            if (data.trim()) {
+              console.log('📨 发送消息:', data)
+              onMessage(data)
+            }
+          } else if (trimmedLine) {
+            // 兼容纯文本流（没有 data: 前缀）
+            console.log('📨 发送纯文本消息:', trimmedLine)
+            onMessage(trimmedLine)
           }
         }
       }
     } catch (error: any) {
       if (error.name === 'AbortError') {
+        console.log('🛑 SSE连接已被用户取消')
         return
       }
+      console.error('❌ SSE连接错误:', error)
       if (onError) {
         const errorEvent = new Event('error')
         onError(errorEvent)
@@ -123,6 +128,7 @@ export function createSSEConnection(
   // 返回一个模拟的EventSource对象，提供close方法
   const mockEventSource = {
     close: () => {
+      console.log('🛑 关闭SSE连接')
       abortController.abort()
     },
     readyState: 1, // OPEN

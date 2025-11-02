@@ -14,9 +14,6 @@ importers:
       axios:
         specifier: ^1.7.7
         version: 1.7.7
-      marked:
-        specifier: ^16.4.1
-        version: 16.4.1
       pinia:
         specifier: ^2.1.7
         version: 2.2.2(typescript@5.4.5)(vue@3.5.10(typescript@5.4.5))
@@ -1093,11 +1090,6 @@ packages:
   make-dir@2.1.0:
     resolution: {integrity: sha512-LS9X+dc8KLxXCb8dni79fLIIUA5VyZoyjSMCwTluaXA0o27cCK0bhXkpgw+sTXVpPy/lSO57ilRixqk0vDmtRA==}
     engines: {node: '>=6'}
-
-  marked@16.4.1:
-    resolution: {integrity: sha512-ntROs7RaN3EvWfy3EZi14H4YxmT6A5YvywfhO+0pm+cH/dnSQRmdAmoFIc3B9aiwTehyk7pESH4ofyBY+V5hZg==}
-    engines: {node: '>= 20'}
-    hasBin: true
 
   memoizee@0.4.17:
     resolution: {integrity: sha512-DGqD7Hjpi/1or4F/aYAspXKNm5Yili0QDAFAY4QYvpqpgiY6+1jOfqpmByzjxbWd/T9mChbCArXAbDAsTm5oXA==}
@@ -2649,8 +2641,6 @@ snapshots:
       pify: 4.0.1
       semver: 5.7.2
     optional: true
-
-  marked@16.4.1: {}
 
   memoizee@0.4.17:
     dependencies:
